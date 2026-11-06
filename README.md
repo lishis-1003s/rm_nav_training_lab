@@ -6,19 +6,46 @@
 
 第一次使用建议按顺序完成：**启动网页 → 定位体验 → 建图并保存 → 加载地图导航 → 命令行检查与调参**。
 
-从源码包在新目录部署，请先阅读 [DEPLOY.md](DEPLOY.md)。编译与启动脚本会自动识别工作区位置。
 
 ## 1. 首次安装与编译
 ```bash
 git clone https://github.com/lishis-1003s/rm_nav_training_lab.git
-
-cd /rm_nav_training_lab
 ```
 打开终端（Ubuntu 通常用 `Ctrl+Alt+T`）。以下示例假设工程位于 `${HOME}/rm_nav_training_lab`；换电脑后将该路径替换为实际工程目录。
 
-请参考 DEPLOY.MD，完成DEPLOY.MD所有步骤再进行。
-请参考 DEPLOY.MD，完成DEPLOY.MD所有步骤再进行。
-请参考 DEPLOY.MD，完成DEPLOY.MD所有步骤再进行。
+适用环境：Ubuntu 22.04 + ROS 2 Humble。支持本机或虚拟机，不依赖 Gazebo。源码包没有包含 ROS、系统依赖或编译产物，安装依赖需要联网。
+
+## 新目录
+
+git clone 得到 `rm_nav_training_lab` 文件夹，建议放到主目录。以下假设路径为 `~/rm_nav_training_lab`；也可放到其他位置，后文的 cd 命令相应替换为实际目录。
+
+```bash
+cd ~/rm_nav_training_lab
+```
+
+不要覆盖已有实验文件。用户自己的地图、bag 和浏览器实验记录不包含在此源码包中。
+
+## 安装依赖
+
+需要预先安装 ROS 2 Humble，并确认 `/opt/ros/humble/setup.bash` 存在。此脚本不安装 ROS 本体：
+
+```bash
+bash scripts/install_dependencies_ubuntu2204.sh
+```
+
+脚本会通过 sudo 安装 Nav2、SLAM Toolbox、ROSBridge、地图读取依赖与编译工具。
+
+## 在终端逐条编译
+
+```bash
+cd ~/rm_nav_training_lab
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install
+source install/setup.bash
+```
+
+应显示 `1 package finished`，没有失败包。第一个 source 加载 ROS，colcon 编译当前工作区，第二个 source 加载本工程。不要复制旧工程的 build、install 和 log。
+
 
 安装脚本会通过 `sudo` 请求系统密码；输入密码时终端不显示字符是正常现象。编译结束应显示 `1 package finished`，且没有失败包。
 
