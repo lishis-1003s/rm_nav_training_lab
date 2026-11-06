@@ -9,7 +9,11 @@
 从源码包在新目录部署，请先阅读 [DEPLOY.md](DEPLOY.md)。编译与启动脚本会自动识别工作区位置。
 
 ## 1. 首次安装与编译
+```bash
+git clone https://github.com/lishis-1003s/rm_nav_training_lab.git
 
+cd /rm_nav_training_lab
+```
 打开终端（Ubuntu 通常用 `Ctrl+Alt+T`）。以下示例假设工程位于 `${HOME}/rm_nav_training_lab`；换电脑后将该路径替换为实际工程目录。
 
 请参考 DEPLOY.MD，完成DEPLOY.MD所有步骤再进行。
