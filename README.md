@@ -63,6 +63,44 @@ ros2 launch rm_nav_training_lab slam_nav2.launch.py \
 
 VS Code Simple Browser 使用同一个 HTTP 地址，不要直接预览 HTML 或使用 Live Server。更新后可用 Ctrl+Shift+R 强制刷新。
 
+## 在终端保存自己建立的地图 默认保存在/maps目录
+
+保持**建图模式**运行，停止手动运动。在终端 C 执行：
+
+```bash
+
+ros2 topic echo /map --once --field info
+
+cd ~/rm_nav_training_lab/src/rm_nav_training_lab/maps
+
+ros2 run nav2_map_server map_saver_cli \
+  -f slam_01 
+
+```
+
+确认终端报告成功，且文件夹中存在 `slam_01.pgm` 和 `slam_01.yaml`。YAML 记录图片位置、每格尺寸 `resolution` 和地图原点 `origin`。图片与 YAML 必须一起保留；同名保存会覆盖旧文件。
+
+这里保存的是栅格地图，不包含继续建图所需的 SLAM 位姿图状态。
+
+## 加载自己的地图导航
+由终端 B 启动，先按 `Ctrl+C` 停止旧实验，再执行：
+
+```bash
+ros2 launch rm_nav_training_lab known_map.launch.py \
+  serve_web:=false rviz:=false \
+  map:=地图路径
+```
+例如：/home/rm/rm_nav_training_lab/src/rm_nav_training_lab/maps/rmul2026_3v3.yaml
+加载的地图同时用于导航和仿真的激光／碰撞环境，机器人会选择可容纳底盘的出生位置。支持 trinary 地图、PGM 或 PNG 图片，要求地图 `origin` 的 yaw 为 0。未知区域按不可通行处理。
+
+
+## 参数调整与路径对比实验
+
+新增地图已作为默认体验配置保存在 `src/rm_nav_training_lab/config/experience_defaults.yaml`
+
+按顺序练习：全局代价地图 → 局部代价地图 → 放置障碍 → 运动途中移动障碍 → 速度对比 → 路径跟随权重。一次只改变一个因素。
+
+**完整步骤、参数含义和建议对比值见[可视化导航参数实验](docs/PARAMETER_LAB.md)。**
 
 ## 5. 学会检查 ROS 是否正常
 
@@ -106,46 +144,8 @@ ros2 topic echo /rosout
 
 Launch 现在跟随启动终端的 ROS_DOMAIN_ID，未设置时使用默认域 0；也可显式传入 ros_domain_id:=数字覆盖。启动与保存地图使用相同域和 DDS 设置。若修改过环境，需要重新启动实验才生效；不要在当前地图未保存时停止 SLAM。
 
-## 6. 在终端保存自己建立的地图 默认保存在/maps目录
 
-保持**建图模式**运行，停止手动运动。在终端 C 执行：
-
-```bash
-
-ros2 topic echo /map --once --field info
-
-cd ~/rm_nav_training_lab/src/rm_nav_training_lab/maps
-
-ros2 run nav2_map_server map_saver_cli \
-  -f slam_01 
-
-```
-
-确认终端报告成功，且文件夹中存在 `slam_01.pgm` 和 `slam_01.yaml`。YAML 记录图片位置、每格尺寸 `resolution` 和地图原点 `origin`。图片与 YAML 必须一起保留；同名保存会覆盖旧文件。
-
-这里保存的是栅格地图，不包含继续建图所需的 SLAM 位姿图状态。
-
-## 7. 加载自己的地图导航
-由终端 B 启动，先按 `Ctrl+C` 停止旧实验，再执行：
-
-```bash
-ros2 launch rm_nav_training_lab known_map.launch.py \
-  serve_web:=false rviz:=false \
-  map:=地图路径
-```
-例如：/home/rm/rm_nav_training_lab/src/rm_nav_training_lab/maps/rmul2026_3v3.yaml
-加载的地图同时用于导航和仿真的激光／碰撞环境，机器人会选择可容纳底盘的出生位置。支持 trinary 地图、PGM 或 PNG 图片，要求地图 `origin` 的 yaw 为 0。未知区域按不可通行处理。
-
-
-## 参数调整与路径对比实验
-
-新增地图已作为默认体验配置保存在 `src/rm_nav_training_lab/config/experience_defaults.yaml`
-
-按顺序练习：全局代价地图 → 局部代价地图 → 放置障碍 → 运动途中移动障碍 → 速度对比 → 路径跟随权重。一次只改变一个因素。
-
-**完整步骤、参数含义和建议对比值见[可视化导航参数实验](docs/PARAMETER_LAB.md)。**
-
-## 8. 停止、更新与常见问题
+## 6. 停止、更新与常见问题
 
 **正常停止：** 先取消导航、松开按键。网页启动的实验用“停止实验”；终端启动的实验在原 Launch 终端按 `Ctrl+C`。最后在终端 A 按 `Ctrl+C` 关闭网页服务。
 
@@ -174,7 +174,7 @@ source install/setup.bash
 | 虚拟机卡顿 | 切二维、关闭 RViz，避免多开实验；用 `top` 检查 CPU 与内存。 |
 
 
-## 9.目标与成果 
+## 7.目标与成果 
 1.使用建图模式，在画面中添加障碍物，构建并保存地图。
 
 2.使用导航模式，加载自己建的图
