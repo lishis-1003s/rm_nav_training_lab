@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RM 哨兵导航训练平台</title>
+  <style>
+    select {background:#142128;color:#d8e0dd;border:1px solid #304149;border-radius:6px;padding:8px;max-width:100%;}
+    body[data-learning="teaching"] .experience-only {display:none!important;}
+    pre.command {white-space:pre-wrap;overflow-wrap:anywhere;background:#091216;padding:12px;border-radius:7px;font-size:12px;line-height:1.7;}
+    :root {
+      color-scheme: dark;
+      --bg: #0b1115;
+      --panel: #111a20;
+      --panel-soft: #162128;
+      --line: #283840;
+      --line-soft: #203038;
+      --text: #e5edf0;
+      --muted: #92a4ac;
+      --dim: #63747c;
+      --accent: #90e36a;
+      --accent-ink: #152112;
+      --cyan: #61d8d0;
+      --amber: #f2b85d;
+      --red: #ff7272;
+      --blue: #74aaff;
+      --radius: 12px;
+      font-family: Inter, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { height: 66px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 18px; padding: 0 22px; background: #0e161b; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 278px; }
+    .mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: #12220f; font-weight: 900; letter-spacing: -1px; }
+    .brand-title { font-size: 14px; font-weight: 730; letter-spacing: .02em; }
+    .brand-sub { color: var(--muted); font-size: 10px; margin-top: 2px; letter-spacing: .09em; text-transform: uppercase; }
+    .top-spacer { flex: 1; }
+    .connection { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); box-shadow: 0 0 0 3px #63747c22; }
+    .dot.live { background: var(--accent); box-shadow: 0 0 0 3px #90e36a22; }
+    .dot.warn { background: var(--amber); box-shadow: 0 0 0 3px #f2b85d22; }
+    .connect-box { display: flex; align-items: center; gap: 7px; }
+    .connect-box input { width: 188px; background: #0a1115; border: 1px solid var(--line); color: var(--text); border-radius: 7px; padding: 8px 10px; font-size: 11px; }
+    .btn { border: 1px solid var(--line); border-radius: 7px; color: var(--text); background: var(--panel-soft); padding: 8px 11px; font-size: 11px; font-weight: 650; transition: .15s ease; }
+    .btn:hover { border-color: #536871; background: #1d2c34; }
+    .btn.primary { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+    .btn.primary:hover { background: #a1ef7d; }
+    .btn.danger { color: #ffdada; border-color: #6e393d; background: #321c20; }
+    .btn.small { padding: 6px 9px; font-size: 10px; }
+    .app-grid { display: grid; grid-template-columns: 216px minmax(460px, 1fr) 320px; gap: 14px; padding: 14px; max-width: 1920px; margin: 0 auto; }
+    .left, .right, .workspace { min-width: 0; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .left { display: flex; flex-direction: column; gap: 12px; }
+    .section-label { color: var(--dim); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; padding: 2px 8px 7px; font-weight: 750; }
+    .nav-panel { padding: 13px 8px 10px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; color: var(--muted); background: transparent; text-align: left; padding: 9px 10px; border-radius: 8px; font-size: 11px; }
+    .nav-item:hover { background: #18242a; color: var(--text); }
+    .nav-item.active { background: #24352a; color: var(--accent); }
+    .nav-icon { width: 18px; text-align: center; font-size: 13px; }
+    .lesson-panel { padding: 13px 10px 10px; }
+    .lesson-btn { display: block; width: 100%; text-align: left; color: var(--muted); background: none; border: 0; padding: 8px 9px; border-radius: 7px; font-size: 10px; line-height: 1.35; }
+    .lesson-btn:hover { color: var(--text); background: #172329; }
+    .lesson-btn.active { color: var(--text); background: #1c2c32; }
+    .lesson-num { color: var(--dim); font-size: 9px; margin-right: 7px; font-variant-numeric: tabular-nums; }
+    .safe-note { padding: 13px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .safe-note strong { display: block; color: var(--cyan); margin-bottom: 5px; font-size: 10px; }
+    .workspace { display: flex; flex-direction: column; gap: 12px; }
+    .page-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 3px 3px; }
+    h1 { font-size: 16px; margin: 0; font-weight: 720; }
+    .subtitle { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .run-state { border: 1px solid var(--line); border-radius: 30px; padding: 6px 10px; color: var(--muted); font-size: 10px; display: flex; align-items: center; gap: 7px; }
+    .map-panel { overflow: hidden; }
+    .map-head { padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line-soft); }
+    .map-title { font-size: 11px; font-weight: 700; }
+    .map-caption { font-size: 9px; color: var(--muted); margin-top: 3px; }
+    .map-actions { display: flex; gap: 6px; align-items: center; }
+    .canvas-wrap { position: relative; background: #10191e; height: min(58vh, 560px); min-height: 360px; overflow: hidden; }
+    #mapCanvas {touch-action:none;cursor:crosshair; display: block; width: 100%; height: 100%; }
+    .canvas-tip { position: absolute; left: 12px; top: 11px; background: #0b1115dd; border: 1px solid #304149; color: #b4c3c9; border-radius: 6px; padding: 6px 8px; font-size: 9px; pointer-events: none; }
+    .legend { position: absolute; right: 12px; top: 11px; display: flex; gap: 9px; background: #0b1115dd; border: 1px solid #304149; color: #b4c3c9; border-radius: 6px; padding: 6px 8px; font-size: 9px; pointer-events: none; }
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .swatch { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); }
+    .swatch.path { background: var(--blue); }
+    .swatch.goal { background: var(--amber); }
+    .map-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line-soft); padding: 9px 13px; color: var(--muted); font-size: 9px; flex-wrap: wrap; }
+    .layers { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    .check { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+    .check input { accent-color: var(--accent); width: 12px; height: 12px; margin: 0; }
+    .telemetry { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+    .metric { padding: 11px 12px; min-height: 69px; }
+    .metric-label { color: var(--muted); font-size: 9px; }
+    .metric-value { font-size: 15px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    .metric-value span { font-size: 9px; color: var(--muted); font-weight: 500; }
+    .right { display: flex; flex-direction: column; gap: 12px; }
+    .right-panel { padding: 13px; }
+    .panel-title { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 730; margin-bottom: 11px; }
+    .panel-title small { color: var(--dim); font-size: 9px; font-weight: 500; }
+    .mission-title { font-size: 12px; line-height: 1.4; font-weight: 720; }
+    .mission-copy { font-size: 10px; color: var(--muted); line-height: 1.55; margin-top: 7px; }
+    .steps { margin: 10px 0 0; padding-left: 17px; color: var(--muted); font-size: 9px; line-height: 1.65; }
+    .lesson-meta { border-top: 1px solid var(--line-soft); margin-top: 9px; padding-top: 8px; color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .lesson-meta strong { display: block; color: var(--cyan); margin: 5px 0 2px; font-size: 8px; letter-spacing: .04em; }
+    .evidence { width: 100%; min-height: 54px; resize: vertical; margin-top: 9px; background: #0a1115; border: 1px solid var(--line); border-radius: 6px; color: var(--text); padding: 8px; font: inherit; font-size: 9px; }
+    .goal-row { display: flex; gap: 7px; margin-top: 10px; }
+    .goal-row .btn { flex: 1; }
+    .readout { color: var(--muted); font-size: 9px; min-height: 15px; margin-top: 7px; overflow-wrap: anywhere; }
+    .status-list { display: grid; gap: 8px; }
+    .status-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 10px; }
+    .status-name { color: var(--muted); }
+    .status-value { color: var(--text); font-variant-numeric: tabular-nums; }
+    .pill { border-radius: 20px; padding: 3px 7px; border: 1px solid var(--line); color: var(--muted); font-size: 8px; }
+    .pill.ok { color: var(--accent); border-color: #385539; background: #1b2a1d; }
+    .pill.bad { color: var(--red); border-color: #633438; background: #2d1b1e; }
+    .fault-grid { display: grid; gap: 5px; }
+    .fault-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid #1c2a31; font-size: 9px; color: var(--muted); }
+    .fault-row:last-child { border-bottom: 0; }
+    .fault-row input { accent-color: var(--amber); }
+    .fault-label { display: flex; align-items: center; gap: 7px; }
+    .fault-action { margin-top: 9px; display: flex; gap: 7px; }
+    .fault-action .btn { flex: 1; }
+    .manual { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 32px); gap: 4px; justify-content: center; margin: 5px auto; }
+    .manual button { color: var(--muted); background: #18242a; border: 1px solid #304149; border-radius: 6px; font-size: 12px; touch-action: none; }
+    .manual button:hover, .manual button:active { color: var(--accent); border-color: #6b9858; }
+    .manual .forward { grid-column: 2; grid-row: 1; }
+    .manual .left-turn { grid-column: 1; grid-row: 2; }
+    .manual .back { grid-column: 2; grid-row: 2; }
+    .manual .right-turn { grid-column: 3; grid-row: 2; }
+    .service-row { display: flex; align-items: center; gap: 6px; margin-top: 9px; }
+    .service-row input { min-width: 0; flex: 1; background: #0a1115; border: 1px solid var(--line); border-radius: 6px; color: var(--text); padding: 7px 8px; font-size: 10px; }
+    .service-note { color: var(--dim); font-size: 8px; line-height: 1.45; margin-top: 7px; }
+    .event-panel { min-height: 146px; }
+    .events { display: flex; flex-direction: column; gap: 6px; max-height: 175px; overflow: auto; }
+    .event { border-left: 2px solid #43545b; padding: 2px 0 2px 7px; font-size: 9px; color: var(--muted); line-height: 1.4; }
+    .event .time { color: var(--dim); margin-right: 5px; font-variant-numeric: tabular-nums; }
+    .event.warn { border-color: var(--amber); color: #d8c29f; }
+    .event.error { border-color: var(--red); color: #e4a5a7; }
+    .empty { color: var(--dim); font-size: 9px; padding: 8px 0; }
+    .toast { position: fixed; right: 20px; bottom: 20px; max-width: 330px; padding: 11px 13px; border: 1px solid #52656d; border-radius: 8px; color: var(--text); background: #1a272d; box-shadow: 0 12px 40px #0008; font-size: 10px; display: none; z-index: 5; }
+    @media (max-width: 1240px) { .app-grid { grid-template-columns: 190px minmax(400px,1fr); } .right { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; } .event-panel { grid-column: span 2; } }
+    @media (max-width: 900px) { .telemetry { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+    @media (max-width: 760px) { .topbar { padding: 0 12px; gap: 9px; } .brand { min-width: 0; } .brand-sub { display: none; } .connect-box input { width: 130px; } .app-grid { grid-template-columns: 1fr; padding: 10px; } .left { display: grid; grid-template-columns: 1fr 1fr; } .nav-panel { grid-column: span 2; } .nav-panel .nav-item { width: auto; display: inline-flex; } .canvas-wrap { min-height: 330px; height: 48vh; } .right { grid-column: auto; grid-template-columns: 1fr; } .event-panel { grid-column: auto; } .telemetry { grid-template-columns: repeat(2,1fr); } .connection span.label { display: none; } }
+    .workspace>.page-head {display:none;}
+    #readiness {padding:10px 14px;font-size:12px;}
+    #readiness strong {font-size:14px;display:inline;margin-right:12px;}
+    #navigationFeedback {padding:7px 12px;border-radius:6px;font-size:12px;line-height:1.5;}
+    #obstacleRadius {max-width:78px;}
+    #mapTool {max-width:260px;}
+    [hidden] {display:none!important;}
+    button:disabled {opacity:.45;cursor:not-allowed;}
+    .left {display:none!important;}
+    .app-grid {grid-template-columns:minmax(0,1fr) 340px!important;max-width:1700px;padding:18px;gap:18px;}
+    .workspace {gap:14px;}
+    .right {display:block!important;grid-column:auto!important;}
+    .tool-tabs {display:flex;gap:5px;margin-bottom:12px;position:sticky;top:0;background:var(--bg);z-index:2;padding:6px 0;}
+    .tool-tabs button {flex:1;font-size:13px;padding:10px 4px;}
+    .tool-tabs button[aria-selected="true"] {color:var(--accent);border-color:var(--accent);}
+    .tool-pane[hidden] {display:none!important;}
+    .tool-pane>section {margin-bottom:12px;}
+    .tool-pane .lesson-panel {display:block;}
+    .readiness {border:1px solid #66502b;background:#302718;padding:14px 16px;border-radius:10px;font-size:14px;line-height:1.6;}
+    .readiness.ready {border-color:#42683b;background:#172b20;}
+    .readiness strong {display:block;font-size:16px;}
+    .startup-help {margin-top:8px;color:var(--muted);font-size:12px;}
+    .startup-help pre {white-space:pre-wrap;overflow-wrap:anywhere;}
+    .tool-pane {max-height:82vh;overflow:auto;padding-right:3px;}
+    .mode-guide {font-size:13px;line-height:1.8;color:var(--muted);}
+    .app-grid .panel-title,.map-title {font-size:14px;}
+    .app-grid .service-note,.app-grid .readout,.app-grid .mission-copy,.app-grid .steps,.app-grid .lesson-meta,.app-grid .status-row,.app-grid .fault-row,.app-grid .lesson-btn,.app-grid .evidence {font-size:12px;line-height:1.65;}
+    .app-grid .btn {font-size:12px;padding:9px 11px;}
+    .canvas-wrap {height:min(65vh,680px);min-height:360px;}
+    .telemetry {grid-template-columns:repeat(3,minmax(0,1fr));}
+    .connect-box {max-width:230px;}
+    @media(max-width:1100px){.app-grid{grid-template-columns:1fr!important;}.right{grid-column:1!important;}.tool-pane{max-height:none;}.canvas-wrap{height:55vh;}.topbar{padding:0 14px;}.brand{min-width:0;}.brand-sub{display:none;}}
+  </style>
+</head>
+<body data-learning="experience">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">RM</div>
+      <div><div class="brand-title">哨兵导航训练平台</div><div class="brand-sub">ROS 2 NAVIGATION LAB · HUMBLE</div></div>
+    </div>
+    <div class="connection"><i id="connDot" class="dot"></i><span id="connText" class="label">等待 ROS 连接</span></div>
+    <div class="top-spacer"></div>
+    <div class="connect-box">
+      <input id="wsUrl" aria-label="ROSBridge WebSocket 地址" value="ws://localhost:9090" spellcheck="false">
+      <button id="connectBtn" class="btn primary">连接</button>
+    </div>
+  </header>
+
+  <main class="app-grid">
+    <aside class="left">
+      <section class="panel nav-panel">
+        <div class="section-label">工作台</div>
+        <button class="nav-item active"><span class="nav-icon">⌖</span>导航工作台</button>
+        <button class="nav-item" id="diagNav"><span class="nav-icon">⌁</span>数据与诊断</button>
+        <button class="nav-item" id="flowNav"><span class="nav-icon">◫</span>系统数据链</button>
+      </section>
+      <section class="panel lesson-panel">
+        <div class="section-label">训练关卡</div>
+        <button class="lesson-btn active" data-lesson="0"><span class="lesson-num">01</span>Linux 与 ROS 2 入门</button>
+        <button class="lesson-btn" data-lesson="1"><span class="lesson-num">02</span>TF2 与激光雷达</button>
+        <button class="lesson-btn" data-lesson="2"><span class="lesson-num">03</span>SLAM 手动探索</button>
+        <button class="lesson-btn" data-lesson="3"><span class="lesson-num">04</span>地图加载与导航流程</button>
+        <button class="lesson-btn" data-lesson="4"><span class="lesson-num">05</span>Costmap 膨胀</button>
+        <button class="lesson-btn" data-lesson="5"><span class="lesson-num">06</span>全局路径规划</button>
+        <button class="lesson-btn" data-lesson="6"><span class="lesson-num">07</span>局部控制与底盘</button>
+        <button class="lesson-btn" data-lesson="7"><span class="lesson-num">08</span>行为树与恢复行为</button>
+        <button class="lesson-btn" data-lesson="8"><span class="lesson-num">09</span>综合故障诊断</button>
+      </section>
+      <section class="panel safe-note">
+        <strong>隔离实验模式</strong>
+        本平台故障控件只作用于本包的 2D 仿真器。建议在独立 ROS_DOMAIN_ID 中运行；请勿把训练话题桥接到实车域。
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="page-head">
+        <div><h1>导航工作台</h1><div class="subtitle">先确认导航就绪，再点击地图选点，最后点击开始导航</div></div>
+        <div class="run-state"><i id="runtimeDot" class="dot"></i><span id="runtimeText">等待运行数据</span></div>
+      </div>
+
+      <section class="panel right-panel">
+        <div class="panel-title">先选一个体验</div>
+        <div class="experience-only goal-row"><button class="btn" data-experience="localization">① 定位</button><button class="btn" data-experience="slam">② 建图</button><button class="btn primary" data-experience="navigation">③ 导航</button></div>
+        <div id="experienceGuide" class="experience-only service-note" aria-live="polite"></div>
+        <div class="service-row"><label for="learningMode">使用方式</label><select id="learningMode"><option value="teaching">教学模式 · 终端驱动</option><option value="experience" selected>自由体验 · 网页控制</option></select></div>
+        <div id="teachingNote" class="service-note">教学模式通过终端启动 / Ctrl+C 停止实验、修改 YAML、保存和加载地图。网页用于观察、交互和证据记录。切换使用方式不会停止进程；请先结束已有实验，避免重复启动。</div>
+        <div class="service-row experience-only"><select id="runMode"><option value="localization">① 定位体验 · 已知地图定位</option><option value="sim">仅仿真 · 手动移动</option><option value="slam">② 建图体验 · 从空白地图探索</option><option value="navigation" selected>③ 导航体验 · 拖动目标自主到达</option></select><label for="bodyRadius">底盘半径 m</label><input id="bodyRadius" type="number" min="0.05" max="1" step="0.01" value="0.30" aria-label="底盘半径 m"></div>
+        <div class="service-row experience-only"><input id="worldMap" placeholder="服务器地图 YAML 绝对路径，空白为 RMUL 2026 地图" list="availableMaps"><datalist id="availableMaps"></datalist></div>
+        <div class="goal-row experience-only"><button id="runStart" class="btn primary">启动 / 切换</button><button id="runStop" class="btn danger">停止实验</button></div>
+        <div id="runStatus" class="service-note">检测本地启动管理器…</div>
+        <div class="service-note">切换模式或地图将重启实验并清空临时障碍；地图同时用于仿真激光/碰撞与导航。默认地图来自官方 2026 RMUL 3V3 V1.0 STEP 的二维切片；高台/坡道按障碍处理，教学地图可另选。</div>
+      </section>
+      <section class="panel right-panel">
+        <div class="panel-title"><span>终端任务与命令</span><small id="commandStage"></small></div>
+        <div id="commandTask" class="mission-copy"></div>
+        <div id="commandHint" class="service-note"></div>
+        <button id="revealCommands" class="btn small">查看命令参考</button>
+        <pre id="lessonCommands" class="command"></pre>
+        <div id="commandEvidence" class="service-note"></div>
+        <div class="service-note">参考命令只展示，不代为执行。先理解节点、话题、坐标系和参数，再在自己的终端运行。</div>
+      </section>
+      <section class="panel map-panel">
+        <div class="map-head">
+          <div><div class="map-title">训练地图 · map</div><div class="map-caption" id="mapMeta">等待 /training/map</div></div>
+          <div class="map-actions"><button id="clearGoalBtn" class="btn small">重新选点</button><button id="sendGoalBtn" class="btn primary small">开始导航</button></div>
+        </div>
+        <div class="service-row" style="padding:8px"><select id="mapTool"><option value="goal">导航目标 · 拖动设朝向</option><option value="pan">浏览地图 · 拖动平移</option><option value="pose">初始位姿 · 拖动设朝向</option><option value="move">移动障碍 · 拖动物体</option><option value="add">添加圆形障碍</option><option value="remove">删除最近障碍</option></select><label for="obstacleRadius">障碍半径 m</label><input id="obstacleRadius" type="number" value="0.30" min="0.05" max="2" step="0.05" aria-label="障碍半径 m"><button id="clearObstacles" class="btn small">清空障碍</button><label><input id="showBefore" type="checkbox" checked>调参前路径</label></div>
+        <div class="map-actions" style="padding:8px 12px;flex-wrap:wrap"><button id="sceneToggle" class="btn small">切换二维</button><span class="map-caption">三维：右键旋转 · Shift 拖动平移</span><button id="fitMap" class="btn small">适应地图</button><button id="followRobot" class="btn small" aria-pressed="false">跟随机器人</button><button id="fullMap" class="btn small">全屏</button><label class="check"><input id="showTrail" type="checkbox" checked>实际轨迹</label><label class="check"><input id="quickGoal" type="checkbox">松手直接导航</label><span id="viewScale" class="readout">1.0×</span></div>
+        <div id="interactionHelp" class="service-note" style="padding:0 12px 8px">滚轮缩放 · 中键或右键拖动平移 · 拖动箭头设置目标朝向 · Esc 取消当前编辑</div>
+        <div id="navigationFeedback" class="readiness" style="margin:0 12px 8px;font-size:12px">等待导航反馈</div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="mapCanvas" aria-label="ROS 地图画布"></canvas>
+          <div class="canvas-tip">滚轮缩放 · 三维右键旋转 / 二维右键平移 · 拖动设目标</div>
+          <div class="legend"><span><i class="swatch"></i>激光</span><span><i class="swatch path"></i>路径</span><span><i class="swatch goal"></i>目标</span></div>
+        </div>
+        <div class="map-foot">
+          <div class="layers">
+            <label class="check"><input id="showGrid" type="checkbox" checked>网格</label>
+            <label class="check"><input id="showScan" type="checkbox" checked>激光</label>
+            <label class="check"><input id="showGlobal" type="checkbox" checked>全局路径</label>
+            <label class="check"><input id="showLocal" type="checkbox" checked>局部轨迹</label>
+            <label class="check"><input id="showGlobalCost" type="checkbox"><span style="color:#3b82f6">●</span> 全局代价地图 · 蓝</label>
+            <label class="check"><input id="showLocalCost" type="checkbox"><span style="color:#123f91">●</span> 局部代价地图 · 深蓝</label>
+          </div>
+          <div id="cursorReadout">目标：未选择</div>
+        </div>
+      </section>
+
+        <div class="telemetry">
+        <div class="panel metric"><div class="metric-label">激光 /scan</div><div id="scanMetric" class="metric-value">— <span>Hz</span></div></div>
+        <div class="panel metric"><div class="metric-label">里程计 /odom</div><div id="odomMetric" class="metric-value">— <span>m</span></div></div>
+        <div class="panel metric"><div class="metric-label">TF map → base_link</div><div id="tfMetric" class="metric-value">等待 <span>关系</span></div></div>
+        <div class="panel metric"><div class="metric-label">Nav2 输出 /cmd_vel</div><div id="cmdMetric" class="metric-value">0.00 <span>m/s</span></div></div>
+        <div class="panel metric"><div class="metric-label">仿真执行 /training/sim_cmd_vel</div><div id="simCmdMetric" class="metric-value">0.00 <span>m/s</span></div></div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <section class="panel right-panel">
+        <div class="panel-title"><span>当前实验</span><small id="lessonCount">关卡 01 / 09</small></div>
+        <div class="mission-title" id="missionTitle">Linux 与 ROS 2 入门</div>
+        <div class="mission-copy" id="missionCopy">熟悉工程启动、节点、话题和 ROS 2 CLI，建立从命令到运行数据的基础认知。</div>
+        <ol class="steps" id="missionSteps"></ol>
+        <div class="lesson-meta"><strong>观察与成功判据</strong><span id="lessonObserve"></span><strong>提示与复位</strong><span id="lessonReset"></span></div>
+        <textarea id="terminalCommands" class="evidence" placeholder="实际执行的命令，包含 Launch 参数、检查、地图保存与配置路径…"></textarea><textarea id="terminalOutput" class="evidence" placeholder="粘贴终端原始输出；截图、地图、YAML 和 bag 请在提交目录中保留，并在此写明文件名…"></textarea><textarea id="evidenceInput" class="evidence" placeholder="记录现象、假设、检查的数据和根因证据…"></textarea>
+        <div class="goal-row"><button id="saveEvidenceBtn" class="btn small">保存实验记录</button><button id="exportEvidenceBtn" class="btn small">导出诊断证据</button></div>
+      </section>
+
+      <section id="rosPanel" class="panel right-panel">
+        <div class="panel-title"><span>ROS 状态</span><small>实时消息</small></div>
+        <div class="status-list">
+          <div class="status-row"><span class="status-name">地图 /training/map</span><span id="mapStatus" class="pill">等待</span></div>
+          <div class="status-row"><span class="status-name">ROS 节点图</span><span id="nodeStatus" class="pill">等待</span></div>
+          <div class="status-row"><span class="status-name">激光 /scan</span><span id="scanStatus" class="pill">等待</span></div>
+          <div class="status-row"><span class="status-name">导航 Action</span><span id="actionStatus" class="pill">未请求</span></div>
+          <div class="status-row"><span class="status-name">Nav2 Costmap</span><span id="costStatus" class="pill">等待</span></div>
+        </div>
+        <details><summary>Node List / Topic List</summary><pre id="graphReadout" style="white-space:pre-wrap;max-height:280px;overflow:auto;font-size:11px"></pre></details><div id="nodeReadout" class="readout">等待 training_bridge 的节点图回报</div>
+        <div id="goalReadout" class="readout">未设置目标</div>
+        <div class="goal-row"><button id="cancelGoalBtn" class="btn danger small">取消导航</button><button id="refreshParamBtn" class="btn small">读取参数</button></div>
+      </section>
+
+      <section class="panel right-panel">
+        <div class="panel-title"><span>故障注入</span><small>真实影响仿真话题 / TF</small></div>
+        <div class="fault-grid">
+          <label class="fault-row"><span class="fault-label">中断 /scan</span><input type="checkbox" data-fault="scan_outage"></label>
+          <label class="fault-row"><span class="fault-label">扰动 odom→base_link TF</span><input type="checkbox" data-fault="tf_perturbation"></label>
+          <label class="fault-row"><span class="fault-label">注入里程计噪声</span><input type="checkbox" data-fault="odometry_noise"></label>
+          <label class="fault-row"><span class="fault-label">动态障碍物</span><input type="checkbox" data-fault="dynamic_obstacle"></label>
+          <label class="fault-row"><span class="fault-label">模拟底盘卡死</span><input type="checkbox" data-fault="base_stuck"></label>
+        </div>
+        <div class="fault-action"><button id="resetFaultBtn" class="btn small">复位全部故障</button><button id="manualModeBtn" class="btn small">手动探索说明</button></div>
+        <div class="service-note">勾选后先发送 ROS 命令；只有收到 /training/fault_state 回报才更新为实际状态。</div>
+      </section>
+
+      <section class="panel right-panel">
+        <button id="keyboardFocus" class="btn small">启用键盘控制</button><div id="keyboardState" class="service-note" aria-live="polite">点击地图获得键盘焦点；编辑参数时不接管按键。</div><div class="panel-title"><span>手动探索</span><small>/cmd_vel_explore</small></div>
+        <div class="manual" aria-label="手动控制">
+          <button class="forward" data-motion="forward" title="前进">↑</button>
+          <button class="left-turn" data-motion="left" title="左平移">←</button>
+          <button class="back" data-motion="back" title="后退">↓</button>
+          <button class="right-turn" data-motion="right" title="右平移">→</button>
+        </div>
+        <div class="goal-row"><button class="btn" data-motion="ccw">Q ↶</button><button class="btn" data-motion="cw">E ↷</button></div><div class="service-note">先点击地图或“启用键盘控制”。W/S 前后 · A/D 左右平移 · Q/E 旋转，可组合按键。松开、失焦自动停止；编辑输入框时不接管键盘。手动控制前请取消导航。</div>
+      </section>
+
+      <section class="panel right-panel">
+        <div class="goal-row"><button id="saveExperimentStart" class="btn small">保存对比起点与布局</button><button id="repeatExperiment" class="btn small">恢复并运行同一目标</button></div><div id="experimentStatus" class="service-note">先选目标，保存起点。基线到达后记录调整前；改参后恢复起点，重跑并记录调整后。仅用于已知地图导航。</div>
+        <details><summary>如何比较参数效果？</summary><div class="service-note">全局：膨胀半径 0.55 → 1.0，观察蓝色范围和全局路径。局部：固定全局参数，局部半径 0.55 → 0.9，观察深蓝范围和实际绕行。动态障碍：导航中移动橙色障碍，观察全局重规划与局部避障。速度：长直道联动速度 0.3 → 1.5，比较实测曲线和耗时。跟随：路径跟随权重 8 → 64，比较实际轨迹与局部轨迹；需勾选重载，重载会取消导航。每轮只改一项。详细步骤见 README。</div></details>
+        <div class="panel-title"><span>导航参数实验</span><small>读取 → 应用 → 回读 → 对比</small></div>
+        <select id="navParam" style="width:100%"></select>
+        <div id="paramMode" class="service-note"></div>
+        <div id="paramEffect" class="mission-copy"></div>
+        <div id="paramActual" class="readout">节点当前值：尚未读取</div>
+        <label for="navParamSlider" class="service-note">待应用值（拖动不会发送 ROS 请求）</label>
+        <input id="navParamSlider" type="range" style="width:100%" aria-label="待应用参数值滑块">
+        <div id="paramObserve" class="service-note"></div>
+        <label class="service-note"><input id="confirmParamReload" type="checkbox">修改需重载的评分权重时，取消全部导航任务并重载控制器</label>
+        <div id="paramApplyStatus" class="readout" aria-live="polite">尚未应用</div>
+        <div class="service-row"><input id="navParamValue" type="number" step="0.05" aria-label="导航参数值"><button id="readNavParam" class="btn small">读取</button><button id="applyNavParam" class="btn small">应用</button></div>
+        <div class="goal-row"><button id="captureBefore" class="btn small">记录调整前</button><button id="compareAfter" class="btn small">记录调整后</button><button id="exportExperiment" class="btn small">导出对比 JSON</button><button id="resetNavParams" class="btn small">恢复默认参数</button></div>
+        <div style="display:flex;gap:6px"><img id="beforeImage" alt="调整前画布" hidden style="width:49%;object-fit:contain"><img id="afterImage" alt="调整后画布" hidden style="width:49%;object-fit:contain"></div><pre id="comparison" style="white-space:pre-wrap;font-size:11px">同一目标、同一障碍布局下比较；紫线为调整前真实路径。</pre>
+        <div class="service-note">实时参数直接调用 ROS 参数服务；评分权重需勾选重载选项。恢复默认会恢复列表参数并重载控制器，需要勾选同一选项。AMCL 不在调参范围内。</div>
+        <div class="service-row" hidden><input id="inflationInput" type="number" min="0.05" max="2" step="0.05" value="0.55" aria-label="膨胀半径"><button id="setInflationBtn" class="experience-only btn small">应用</button></div>
+        <details open><summary>当前值对应的命令行</summary><button id="copyParameterCommands" class="btn small">复制命令</button><pre id="parameterCommands" class="command"></pre></details><div id="paramReadout" class="service-note">读取 /global_costmap/global_costmap 参数服务</div>
+        <div class="service-row experience-only"><input id="mapName" value="rm_training_map" aria-label="地图文件名"><button id="saveMapBtn" class="experience-only btn small">保存 SLAM 地图</button></div>
+        <div class="service-note">教学模式使用终端 map_saver_cli 保存图片与 YAML，然后在导航 Launch 中传入地图路径。自由体验模式可使用网页保存。</div>
+      </section>
+
+      <section class="panel right-panel event-panel">
+        <div class="panel-title"><span>事件与日志</span><small>ROS 回报</small></div>
+        <div id="events" class="events"><div class="empty">连接 ROS 后显示节点日志、服务回执和故障状态。</div></div>
+      </section>
+    </aside>
+  </main>
+  <div id="toast" class="toast"></div>
+
+  <script src="curriculum.js?v=20261105b"></script>
+  <script src="parameter_tools.js?v=20261106b"></script>
+  <script src="keyboard_control.js?v=20261106a"></script>
+  <script src="map_interaction.js?v=20261105b"></script>
+  <script src="scan_transform.js?v=20261105b"></script>
+  <script src="scene3d.js?v=20261105b"></script>
+  <script>
+    const lessons = [
+      {title:'Linux 与 ROS 2 入门', copy:'熟悉工程启动、节点、话题和 ROS 2 CLI，建立从命令到运行数据的基础认知。', steps:['在 ROS_DOMAIN_ID=0 的终端 source Humble 和工作区。','启动 sim_only.launch.py。','使用 ros2 node list、topic list、topic info 和 topic hz 查看运行状态。','查看 /scan 消息并在事件面板识别节点日志。'], observe:'能说明节点和话题的区别，并找到仿真器、桥接器和激光数据。', reset:'结束 launch 后确认节点退出；重开终端重新 source 环境。'},
+      {title:'TF2 与激光雷达', copy:'检查 map → odom → base_link → laser_frame 的连通性，理解扫描数据的坐标系和时间戳。', steps:['查看 /scan 的频率、frame_id、时间戳和量程。','用 tf2_tools 查看 TF 树并确认激光坐标系存在。','启用 TF 扰动，比较 TF 位姿、/odom 和 RViz2 激光位置。','复位并确认坐标链重新一致。'], observe:'TF 故障后 transform 与 odometry 存在可观测偏差；LaserScan 按对应 frame 变换。', reset:'关闭 TF 扰动，确认 map → odom → base_link → laser_frame 连通。'},
+      {title:'SLAM 手动探索', copy:'使用独立 /cmd_vel_explore 驱动仿真底盘，观察 SLAM 地图更新并保存地图。', steps:['使用 slam_nav2.launch.py 启动 SLAM 模式。','按住方向控件或使用 W/A/S/D 探索通道。','观察 /training/map 与 RViz2 地图变化。','在终端运行 map_saver_cli，检查生成图片和 YAML。'], observe:'地图随扫描与运动更新；终端保存成功，且生成可读取的图片和 YAML。', reset:'停止手动速度输入；保存前核对地图名称和服务响应。'},
+      {title:'地图加载与导航流程', copy:'学习地图、坐标变换、规划、控制与行为树组成的完整导航链路。定位作为基础服务，不要求调节 AMCL。', steps:['选择地图 YAML，启动已知地图导航。','检查 map → odom → base_link 与激光。','发送目标，观察全局路径、局部轨迹与速度。','记录 Action 完成或失败的证据。'], observe:'目标进入真实 Nav2；规划、控制和行为树状态可追踪。', reset:'取消目标并恢复教学参数，必要时重启实验。'},
+      {title:'Costmap 膨胀', copy:'先通过终端读取、设置和导出参数，再修改 YAML 并重启 Launch，对比实际 Costmap 和路径。', steps:['在终端使用 param list/get 查找参数。','用 param set 调整膨胀半径并 get 回读。','复制参数 YAML，修改配置并通过 params_file 重启。','记录调整前后 Costmap、路径与参数 dump。'], observe:'服务成功且 GetParameters 读回值与输入一致，Costmap 膨胀范围随之变化。', reset:'将 inflation_layer.inflation_radius 恢复为 0.55 m，再读回确认。'},
+      {title:'全局路径规划', copy:'设置可达和不可达目标，分析 Planner Server、全局路径与规划失败日志。', steps:['在浏览器地图上选取可达目标并发送 Nav2 Action。','观察 /plan 的路径与规划器日志。','启用动态障碍物，比较重新规划结果。','选取被墙体阻挡的位置，记录失败状态。'], observe:'路径来自 Planner Server；目标不可达时 Action 或日志返回失败原因。', reset:'取消当前目标并复位动态障碍物，再开始下一次规划。'},
+      {title:'局部控制与底盘', copy:'对照局部轨迹、Nav2 速度输出、仿真器执行速度、里程计和机器人位姿。', steps:['确认 /local_plan、/cmd_vel 和 /training/sim_cmd_vel。','启用底盘卡死，观察速度输出与执行命令差异。','复位后注入里程计噪声，比较 /odom 与 TF。','记录故障位于控制输出还是运动响应。'], observe:'卡死时 Nav2 输出可非零而仿真执行速度为零；里程计噪声使估计运动偏离仿真位姿。', reset:'关闭底盘卡死与里程计噪声，确认 /odom 与 TF 重新贴合。'},
+      {title:'行为树与恢复行为', copy:'观察 BT Navigator 的行为树状态、Action 反馈和 Nav2 重试或恢复行为。', steps:['用 action list/info 和 topic echo 检查 Action 与行为树。','给出可达目标，观察规划、跟随与完成状态转换。','制造扫描中断或不可达目标，查看失败与恢复节点日志。','恢复输入并观察 Action 是否继续、重试或终止。'], observe:'状态变化来自 Nav2 行为树日志和 Action 反馈，不由前端模拟。', reset:'结束目标、恢复传感器并清除 Costmap 后再启动下一次任务。'},
+      {title:'综合故障诊断', copy:'按照“现象 → 数据 → 假设 → 验证 → 修复”的顺序完成可复现的故障定位。', steps:['记录现象、Action 状态、节点图和 ROS 日志。','检查 /scan、/odom、TF、Costmap、路径与速度输出。','每次只启用一种故障并验证数据因果。','保存包含现象、证据、根因和复位结果的实验记录。'], observe:'诊断记录包含现象、至少两条 ROS 证据、根因和恢复步骤。', reset:'复位全部故障并确认 /training/fault_state 中全部值为 false。'},
+    ];
+
+    const state = {
+      view:{zoom:1,panX:0,panY:0,follow:false},trail:[],gesture:null, ws: null, map: null, scan: null, odom: null, robot: null, mapOdom: null, odomBase: null,
+      baseLaser: {x:0.18,y:0,yaw:0}, globalPath: null, localPath: null, globalCost: null, localCost: null,
+      target: null, faults: {}, scanCount: 0, odomCount: 0, navCmd: null, simCmd: null, nodes:[], navigationStatus:null,
+      services: new Map(), nextId: 1, lastTopics: {}, activeMotion: null,
+    };
+    const canvas = document.getElementById('mapCanvas');
+    let sceneMode=true, sceneCamera={yaw:-.35,tilt:.85};
+    let scanTF = new ScanTransform.Buffer();
+    canvas.tabIndex=0;canvas.setAttribute('aria-label','ROS 地图画布，点击后使用 WASD 移动、QE 旋转');
+    const ctx = canvas.getContext('2d');
+    let toastTimer = null;
+    let reconnectTimer = null;
+
+    class RosBridge {
+      connect(url) {
+        if(state.ws){state.ws.onclose=null;state.ws.onmessage=null;if(state.ws.readyState<2)state.ws.close();}
+        state.experimentStart=null;state.runStats=null;scanTF=new ScanTransform.Buffer();state.scan=null;state.scanPose=null;state.pendingScans=[];state.baseLaser=null;state.map=null;state.mapRaster=null;state.robot=null;state.mapOdom=null;state.odomBase=null;state.runtimeStatus=null;state.navigationStatus=null;state.goalSending=false;state.lastTopics={};state.globalPath=null;state.localPath=null;state.globalCost=null;state.localCost=null;state.trail=[];state.target=null;state.gesture=null;draw();
+        clearTimeout(reconnectTimer);
+        setConnection(false, '正在连接');
+        try { state.ws = new WebSocket(url); }
+        catch (err) { setConnection(false, '地址无效'); toast(err.message); return; }
+        state.ws.onopen = () => {
+          clearTimeout(reconnectTimer);
+          setConnection(true, 'ROSBridge 已连接');
+          this.subscribe('/training/map','nav_msgs/msg/OccupancyGrid',300);
+          this.subscribe('/scan','sensor_msgs/msg/LaserScan',100);
+          this.subscribe('/odom','nav_msgs/msg/Odometry',100);
+          this.subscribe('/tf','tf2_msgs/msg/TFMessage',0);
+          this.subscribe('/training/tf','tf2_msgs/msg/TFMessage',100);
+
+          this.subscribe('/tf_static','tf2_msgs/msg/TFMessage',0);
+          this.subscribe('/plan','nav_msgs/msg/Path',200);
+          this.subscribe('/local_plan','nav_msgs/msg/Path',200);
+          this.subscribe('/global_costmap/costmap','nav_msgs/msg/OccupancyGrid',500);
+          this.subscribe('/local_costmap/costmap','nav_msgs/msg/OccupancyGrid',500);
+          this.subscribe('/training/runtime_status','std_msgs/msg/String',0);
+          this.subscribe('/training/navigation_status','std_msgs/msg/String',0);
+          this.subscribe('/training/node_status','std_msgs/msg/String',1000);
+          this.subscribe('/behavior_tree_log','nav2_msgs/msg/BehaviorTreeLog',1000);
+          this.subscribe('/training/fault_state','std_msgs/msg/String',0);
+          this.subscribe('/training/events','std_msgs/msg/String',0);
+          this.subscribe('/training/sim_cmd_vel','geometry_msgs/msg/Twist',0);
+          this.subscribe('/cmd_vel','geometry_msgs/msg/Twist',0);
+          this.subscribe('/rosout','rcl_interfaces/msg/Log',0);
+          this.subscribe('/amcl_pose','geometry_msgs/msg/PoseWithCovarianceStamped',200);
+          addEvent('连接到 ROSBridge；已订阅地图、扫描、TF、路径、Costmap 和日志。');
+        };
+        state.ws.onmessage = event => this.onMessage(event.data);
+        state.ws.onerror = () => setConnection(false, '连接异常');
+        state.ws.onclose = () => {
+          setConnection(false, 'ROSBridge 未连接');
+          reconnectTimer = setTimeout(() => {
+            const urlInput = document.getElementById('wsUrl').value.trim();
+            if (urlInput) this.connect(urlInput);
+          }, 4000);
+        };
+      }
+      send(payload) {
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) throw new Error('ROSBridge 未连接');
+        state.ws.send(JSON.stringify(payload));
+      }
+      subscribe(topic, type, throttle) {
+        this.send({op:'subscribe', id:`sub_${topic}`, topic, type, throttle_rate:throttle, queue_length:1});
+      }
+      publish(topic, type, msg) { this.send({op:'publish', topic, type, msg}); }
+      callService(service, type, args, timeout=7000) {
+        return new Promise((resolve,reject) => {
+          const id = `svc_${state.nextId++}`;
+          const timer = setTimeout(() => { state.services.delete(id); reject(new Error(`服务超时：${service}`)); }, timeout);
+          state.services.set(id,{resolve,reject,timer,service});
+          try { this.send({op:'call_service',id,service,type,args}); }
+          catch (err) { clearTimeout(timer); state.services.delete(id); reject(err); }
+        });
+      }
+      onMessage(raw) {
+        let data;
+        try { data = JSON.parse(raw); } catch (_) { return; }
+        if (data.op === 'service_response') {
+          const pending = state.services.get(data.id);
+          if (!pending) return;
+          clearTimeout(pending.timer); state.services.delete(data.id);
+          if (data.result === false || data.result === 'false') pending.reject(new Error(data.values?.message || `服务失败：${pending.service}`));
+          else pending.resolve(data.values || data);
+          return;
+        }
+        if (data.op !== 'publish' || !data.topic) return;
+        onTopic(data.topic, data.msg || {});
+      }
+    }
+    const bridge = new RosBridge();
+
+    function setConnection(connected, text) {
+      if(!connected){state.runtimeStatus=null;updateReadiness();}
+      document.getElementById('connDot').className = `dot${connected?' live':''}`;
+      document.getElementById('connText').textContent = text;
+      document.getElementById('runtimeText').textContent = connected ? '已连接 · 等待数据' : '等待 ROS 运行数据';
+      document.getElementById('runtimeDot').className = `dot${connected?' warn':''}`;
+    }
+    function parseString(msg) { try { return JSON.parse(msg.data || '{}'); } catch (_) { return {message:msg.data || ''}; } }
+    function onTopic(topic, msg) {
+      state.lastTopics[topic] = Date.now();
+      if(topic === '/training/runtime_status'){const oldDomain=state.runtimeStatus?.ros_domain_id;state.runtimeStatus=parseString(msg);updateReadiness();if(oldDomain!==state.runtimeStatus.ros_domain_id)parameterReference();return;}
+      if (topic === '/training/map') {
+        state.map = msg;state.mapRaster=null; document.getElementById('mapStatus').textContent = `${msg.info?.width||0}×${msg.info?.height||0}`;
+        document.getElementById('mapStatus').className = 'pill ok';
+        document.getElementById('mapMeta').textContent = `${msg.info?.width||0} × ${msg.info?.height||0} cells · ${Number(msg.info?.resolution||0).toFixed(2)} m/cell · /training/map`;
+        state.odomCount += 0; draw();
+      } else if (topic === '/scan') {
+        state.pendingScans=state.pendingScans||[];state.pendingScans.push(msg);if(state.pendingScans.length>10)state.pendingScans.shift();resolveScan(); state.scanCount++; document.getElementById('scanStatus').textContent = `${(msg.ranges||[]).length} rays`;
+        document.getElementById('scanStatus').className = 'pill ok'; draw();
+      } else if (topic === '/odom') {
+        state.odom = msg; state.odomCount++;updateSpeedDisplay(msg);
+        const p=msg.pose?.pose?.position||{}; document.getElementById('odomMetric').innerHTML = `${Number(p.x||0).toFixed(2)}, ${Number(p.y||0).toFixed(2)} <span>m</span>`;
+      } else if (topic === '/tf' || topic === '/tf_static' || topic === '/training/tf') {
+        for (const item of (msg.transforms||[])){if(topic==='/training/tf'&&!(item.header?.frame_id==='base_link'&&item.child_frame_id==='laser_frame'))continue;updateTransform(item,topic==='/tf_static'||topic==='/training/tf');}
+        updateRobot(); resolveScan(); draw();
+      } else if (topic === '/plan') { state.globalPath=msg;if(state.runStats?.accepted&&!state.runStats.finished&&!state.runPlan&&msg.poses?.length>1&&state.target){const first=msg.poses[0].pose.position,last=msg.poses[msg.poses.length-1].pose.position;if(Math.hypot(last.x-state.target.x,last.y-state.target.y)<.6&&state.robot&&Math.hypot(first.x-state.robot.x,first.y-state.robot.y)<.6)state.runPlan=structuredClone(msg);}draw(); }
+      else if (topic === '/local_plan') { state.localPath=msg; draw(); }
+      else if (topic === '/global_costmap/costmap') { state.globalCost=msg; updateCostStatus(); draw(); }
+      else if (topic === '/local_costmap/costmap') { state.localCost=msg; updateCostStatus(); draw(); }
+      else if (topic === '/training/navigation_status') updateNavigationStatus(parseString(msg));
+      else if (topic === '/training/node_status') updateNodeStatus(parseString(msg));
+      else if (topic === '/behavior_tree_log') {
+        for(const item of (msg.event_log||[]).slice(-8)) addEvent(`BT ${item.node_name}: ${item.previous_status} → ${item.current_status}`,item.current_status==='FAILURE'?'warn':'');
+      }
+      else if (topic === '/training/fault_state') {const data=parseString(msg);state.robotRadius=data.robot_radius;state.obstacles=data.obstacles||{};updateFaults(data);draw();}
+      else if (topic === '/training/events') {
+        const e=parseString(msg); addEvent(e.message || msg.data || 'ROS 事件');
+      } else if (topic === '/training/sim_cmd_vel') { state.simCmd=msg; updateCmdMetric(msg,'sim'); }
+      else if (topic === '/cmd_vel') { state.navCmd=msg; updateCmdMetric(msg,'nav'); }
+      else if (topic === '/rosout') onRosout(msg);
+      else if (topic === '/amcl_pose') {
+        document.getElementById('runtimeText').textContent = '定位与导航数据已到达';
+        document.getElementById('runtimeDot').className = 'dot live';
+      }
+    }
+    function updateTransform(item,isStatic=false) {
+      const parent=(item.header?.frame_id||'').replace(/^\//,''), child=(item.child_frame_id||'').replace(/^\//,'');
+      const t=item.transform||{}, tr=t.translation||{}, q=t.rotation||{};
+      const yaw=Math.atan2(2*((q.w??1)*(q.z||0)+(q.x||0)*(q.y||0)),1-2*((q.y||0)**2+(q.z||0)**2));
+      const transform={x:Number(tr.x||0),y:Number(tr.y||0),yaw,stamp:Number(item.header?.stamp?.sec||0)*1000+Number(item.header?.stamp?.nanosec||0)/1e6};
+      scanTF.add(parent,child,{...transform,stamp:isStatic?0:transform.stamp/1000});
+      if(parent==='map' && child==='odom' && (!state.mapOdom||transform.stamp>=state.mapOdom.stamp)) state.mapOdom=transform;
+      if(parent==='odom' && child==='base_link' && (!state.odomBase||transform.stamp>=state.odomBase.stamp)) state.odomBase=transform;
+      if(parent==='base_link' && child==='laser_frame') state.baseLaser=transform;
+    }
+    function updateRobot() {
+      if (state.mapOdom && state.odomBase && Date.now()-state.mapOdom.stamp<2500 && Date.now()-state.odomBase.stamp<2500) {
+        const a=state.mapOdom.yaw, b=state.odomBase;
+        state.robot={x:state.mapOdom.x+Math.cos(a)*b.x-Math.sin(a)*b.y,
+          y:state.mapOdom.y+Math.sin(a)*b.x+Math.cos(a)*b.y,
+          yaw:a+b.yaw};
+        const last=state.trail[state.trail.length-1];if(!last||Math.hypot(last.x-state.robot.x,last.y-state.robot.y)>.03){state.trail.push({...state.robot});if(state.trail.length>600)state.trail.shift();}
+        document.getElementById('tfMetric').innerHTML='已连通 <span>map → base_link</span>';
+        document.getElementById('tfMetric').style.color='var(--accent)';
+        document.getElementById('runtimeText').textContent='ROS 数据流正常';
+        document.getElementById('runtimeDot').className='dot live';
+      } else {
+        state.robot=null;document.getElementById('tfMetric').innerHTML='等待 <span>有效 TF</span>';
+        document.getElementById('tfMetric').style.color='';
+      }
+    }
+    function updateNavigationStatus(s) {
+      if(state.runStats&&['ACCEPTED','ACTIVE'].includes(s.state))state.runStats.accepted=true;
+      if(state.runStats?.accepted&&!state.runStats.finished&&['SUCCEEDED','FAILED','ERROR','CANCELED','REJECTED'].includes(s.state)){state.runStats.finished=true;state.runStats.elapsed_s=(Date.now()-state.runStats.started)/1000;}
+      const fields=[{READY:'等待目标',SENDING:'发送目标',ACCEPTED:'目标已接受',ACTIVE:'导航中',SUCCEEDED:'已到达',CANCELED:'已取消',FAILED:'导航失败',UNAVAILABLE:'导航不可用',REJECTED:'目标被拒绝',ERROR:'导航异常'}[s.state]||s.state];if(s.distance_remaining!==undefined)fields.push('剩余 '+Number(s.distance_remaining).toFixed(2)+' m');if(s.estimated_time_remaining!==undefined)fields.push('预计 '+Number(s.estimated_time_remaining).toFixed(1)+' s');if(s.number_of_recoveries!==undefined)fields.push('恢复 '+s.number_of_recoveries+' 次');document.getElementById('navigationFeedback').textContent=fields.join(' · ')+(s.detail?' · '+s.detail:'');
+      state.navigationStatus=s;state.goalSending=['SENDING','ACCEPTED','ACTIVE','CANCEL_REQUESTED'].includes(s.state);updateReadiness();
+      const stateText=s.state || 'UNKNOWN';
+      const el=document.getElementById('actionStatus'); el.textContent=stateText; el.className='pill '+(['SUCCEEDED','ACCEPTED','ACTIVE'].includes(stateText)?'ok':(['FAILED','ERROR','UNAVAILABLE','REJECTED'].includes(stateText)?'bad':''));
+      document.getElementById('goalReadout').textContent=s.detail || (s.distance_remaining!==undefined ? `Nav2 剩余距离 ${Number(s.distance_remaining).toFixed(2)} m` : 'Action 状态来自 ROS gateway');
+    }
+    function updateNodeStatus(data) {
+      const nodes=data.nodes||[], el=document.getElementById('nodeStatus');
+      state.nodes=nodes;
+      el.textContent=`${nodes.length} 个`;el.className='pill '+(nodes.length?'ok':'');
+      document.getElementById('graphReadout').textContent=nodes.join('\n')+'\n\nTopic List · 发布数 / 订阅数\n'+(data.topics||[]).map(t=>`${t.name} [${t.types.join(', ')}] ${t.publishers} / ${t.subscribers}`).join('\n');
+      const core=nodes.filter(n=>/training_simulator|training_bridge|amcl|slam_toolbox|planner_server|controller_server|bt_navigator|map_server/.test(n));
+      document.getElementById('nodeReadout').textContent=core.length?core.join(' · '):'当前 ROS 图中暂未发现导航核心节点';
+    }
+    function updateFaults(data) {
+      state.faults=data.faults||{};
+      document.querySelectorAll('[data-fault]').forEach(input => { input.checked=!!state.faults[input.dataset.fault]; });
+      const active=Object.entries(state.faults).filter(([,v])=>v).map(([k])=>k);
+      document.getElementById('runtimeText').textContent=active.length?`仿真故障已启用：${active.length}`:'ROS 数据流正常';
+      document.getElementById('runtimeDot').className=`dot ${active.length?'warn':'live'}`;
+    }
+    function updateCostStatus() {
+      const has=!!(state.globalCost||state.localCost), el=document.getElementById('costStatus');
+      el.textContent=has?`全局 ${state.globalCost?'✓':'—'} · 局部 ${state.localCost?'✓':'—'}`:'等待';
+      el.className='pill '+(has?'ok':'');
+    }
+    const speedSamples=[];
+    function updateSpeedDisplay(msg){
+      const twist=msg.twist?.twist||{},vx=Number(twist.linear?.x||0),vy=Number(twist.linear?.y||0),w=Number(twist.angular?.z||0),speed=Math.hypot(vx,vy),command=Math.hypot(state.navCmd?.linear?.x||0,state.navCmd?.linear?.y||0),now=Date.now();
+      if(state.runStats&&!state.runStats.finished){const r=state.runStats;r.samples++;r.sum+=speed;r.peak=Math.max(r.peak,speed);r.elapsed_s=(now-r.started)/1000;}
+      speedSamples.push({t:now,v:speed,c:command});while(speedSamples.length&&(now-speedSamples[0].t>20000||speedSamples.length>250))speedSamples.shift();
+      const el=document.getElementById('liveSpeed');if(!el)return;
+      el.textContent=speed.toFixed(2)+' m/s';document.getElementById('liveSpeedDetail').textContent=`实测 /odom · vx ${vx.toFixed(2)} / vy ${vy.toFixed(2)} · ω ${w.toFixed(2)} rad/s · 指令 ${command.toFixed(2)} m/s`;
+      const graph=document.getElementById('speedGraph'),c=graph.getContext('2d');c.clearRect(0,0,graph.width,graph.height);const max=Math.max(2,...speedSamples.map(p=>Math.max(p.v,p.c)));
+      for(const [key,color] of [['c','#789dff'],['v','#a2e96d']]){c.strokeStyle=color;c.lineWidth=2;c.beginPath();speedSamples.forEach((p,i)=>{const x=graph.width*(1-(now-p.t)/20000),y=graph.height-4-p[key]/max*(graph.height-8);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();}
+    }
+    function updateCmdMetric(msg,source) {
+      const vx=Number(msg.linear?.x||0), wz=Number(msg.angular?.z||0);
+      const id=source==='nav'?'cmdMetric':'simCmdMetric';
+      document.getElementById(id).innerHTML=`${vx.toFixed(2)} <span>m/s · ${wz.toFixed(2)} rad/s</span>`;
+    }
+    function onRosout(msg) {
+      const level=Number(msg.level||0), severity=level>=40?'error':(level>=30?'warn':'');
+      const prefix=msg.name?`${msg.name}: `:'';
+      addEvent(prefix+(msg.msg||'ROS log'),severity);
+    }
+    function addEvent(text, severity='') {
+      const wrap=document.getElementById('events');
+      const empty=wrap.querySelector('.empty'); if(empty) empty.remove();
+      const row=document.createElement('div'); row.className=`event ${severity}`;
+      const time=document.createElement('span'); time.className='time'; time.textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false});
+      row.append(time,document.createTextNode(String(text)));
+      wrap.prepend(row);
+      while(wrap.children.length>60) wrap.removeChild(wrap.lastChild);
+    }
+    function toast(message) {
+      const el=document.getElementById('toast'); el.textContent=message; el.style.display='block';
+      clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.style.display='none',3200);
+    }
+    function canvasViewport() {
+      if(!state.map?.info)return null;
+      const viewport=()=>sceneMode?Scene3D.viewport(canvas.width,canvas.height,state.map.info,state.view,sceneCamera):MapInteraction.viewport(canvas.width,canvas.height,state.map.info,state.view);let v=viewport();
+      if(state.view.follow&&state.robot){const p=screenWorld(state.robot,v);state.view.panX+=canvas.width/2-p.x;state.view.panY+=canvas.height/2-p.y;v=viewport();}
+      return v;
+    }
+    function screenWorld(p,v){return v.scene?Scene3D.project(p,v):MapInteraction.toScreen(p,v);}
+    function floorWorld(p,v){return v.scene?Scene3D.unproject(p,v):MapInteraction.toWorld(p,v);}
+    function worldToCanvas(x,y,v) { if(v.scene)return Scene3D.project({x,y},v);return {x:v.ox+(x-v.originX)/v.res*v.scale,y:v.oy+v.h*v.scale-(y-v.originY)/v.res*v.scale}; }
+    let drawPending=false;
+    function draw(){if(drawPending)return;drawPending=true;requestAnimationFrame(()=>{drawPending=false;renderMap();});}
+    function renderMap() {
+      const rect=canvas.getBoundingClientRect();
+      const ratio=window.devicePixelRatio||1;
+      const width=Math.max(1,Math.floor(rect.width*ratio)), height=Math.max(1,Math.floor(rect.height*ratio));
+      if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+      ctx.fillStyle='#10191e';ctx.fillRect(0,0,canvas.width,canvas.height);
+      const v=canvasViewport();
+      if(!v){ctx.fillStyle='#809198';ctx.font=`${13*ratio}px sans-serif`;ctx.textAlign='center';ctx.fillText('等待来自 ROS 的 OccupancyGrid',canvas.width/2,canvas.height/2);return;}
+      const cell=v.scale;
+      if(!state.mapRaster){
+        const image=document.createElement('canvas');image.width=v.w;image.height=v.h;
+        const imageContext=image.getContext('2d'),pixels=imageContext.createImageData(v.w,v.h),data=state.map.data||[];
+        for(let row=0;row<v.h;row++)for(let col=0;col<v.w;col++){
+          const value=Number(data[row*v.w+col]??-1),rgb=value<0?[38,52,58]:value>=50?[45,60,67]:[216,224,221];
+          const offset=((v.h-1-row)*v.w+col)*4;pixels.data.set(rgb,offset);pixels.data[offset+3]=255;
+        }
+        imageContext.putImageData(pixels,0,0);state.mapRaster=image;
+      }
+      if(sceneMode){Scene3D.render(ctx,v,state,{grid:document.getElementById('showGrid').checked,globalCost:document.getElementById('showGlobalCost').checked,localCost:document.getElementById('showLocalCost').checked,global:document.getElementById('showGlobal').checked,local:document.getElementById('showLocal').checked,trail:document.getElementById('showTrail').checked,before:document.getElementById('showBefore').checked,scan:document.getElementById('showScan').checked,pose:poseInMap});document.getElementById('viewScale').textContent=state.view.zoom.toFixed(1)+'×';return;}
+      ctx.imageSmoothingEnabled=false;ctx.drawImage(state.mapRaster,v.ox,v.oy,v.w*cell,v.h*cell);
+      if(document.getElementById('showGrid').checked && cell>3*ratio){
+        ctx.strokeStyle='#6d7d8230';ctx.lineWidth=1*ratio;ctx.beginPath();
+        for(let c=0;c<=v.w;c+=10){const x=v.ox+c*cell;ctx.moveTo(x,v.oy);ctx.lineTo(x,v.oy+v.h*cell);}
+        for(let r=0;r<=v.h;r+=10){const y=v.oy+r*cell;ctx.moveTo(v.ox,y);ctx.lineTo(v.ox+v.w*cell,y);}
+        ctx.stroke();
+      }
+      if(document.getElementById('showGlobalCost').checked && state.globalCost) drawCostmap(state.globalCost,v,ParameterTools.palette.global,.5);
+      if(document.getElementById('showLocalCost').checked && state.localCost) drawCostmap(state.localCost,v,ParameterTools.palette.local,.72);
+      if(document.getElementById('showGlobal').checked && state.globalPath) drawPath(state.globalPath,v,'#668aff',2.1*ratio);
+      if(document.getElementById('showLocal').checked && state.localPath) drawPath(state.localPath,v,'#62d9cf',1.5*ratio);
+      if(document.getElementById('showScan').checked && state.scan && state.robot) drawScan(v,ratio);
+      for(const o of Object.values(state.obstacles||{})){const p=worldToCanvas(o.x,o.y,v);ctx.fillStyle='#d68c45';ctx.beginPath();ctx.arc(p.x,p.y,o.radius/v.res*v.scale,0,2*Math.PI);ctx.fill();}
+      if(state.beforeTrail?.length&&document.getElementById('showBefore').checked){ctx.strokeStyle='#ffb0f0';ctx.lineWidth=2*ratio;ctx.setLineDash([5*ratio,4*ratio]);ctx.beginPath();state.beforeTrail.forEach((q,i)=>{const p=worldToCanvas(q.x,q.y,v);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.stroke();ctx.setLineDash([]);}
+      if(state.beforePath && document.getElementById('showBefore').checked)drawPath(state.beforePath,v,'#c759db',2*ratio);
+      if(document.getElementById('showTrail').checked&&state.trail.length>1){ctx.strokeStyle='#d18bff';ctx.lineWidth=1.5*ratio;ctx.beginPath();state.trail.forEach((point,i)=>{const p=worldToCanvas(point.x,point.y,v);if(i)ctx.lineTo(p.x,p.y);else ctx.moveTo(p.x,p.y);});ctx.stroke();}
+      if(state.gesture?.kind==='pose')drawPoseArrow(state.gesture.start,state.gesture.yaw||0,v,ratio,'#ff91c8');
+      if(state.gesture?.kind==='move'&&state.gesture.preview){const p=worldToCanvas(state.gesture.preview.x,state.gesture.preview.y,v);ctx.strokeStyle='#ffcd74';ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(p.x,p.y,state.gesture.obstacle.radius/v.res*v.scale,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+      if(state.robot) drawRobot(v,ratio);
+      if(state.target) drawTarget(v,ratio);
+      document.getElementById('viewScale').textContent=state.view.zoom.toFixed(1)+'×';
+    }
+    const costmapRasters=new WeakMap();
+    function drawCostmap(msg,v,color,maxAlpha) {
+      const info=msg.info||{},w=Number(info.width||0),h=Number(info.height||0),data=msg.data||[];
+      const frame=(msg.header?.frame_id||'map').replace(/^\//,'');
+      if(!w||!h||!data.length||(frame!=='map'&&frame!=='odom')||(frame==='odom'&&!state.mapOdom))return;
+      let image=costmapRasters.get(msg);
+      if(!image){image=document.createElement('canvas');image.width=w;image.height=h;const c=image.getContext('2d'),pixels=c.createImageData(w,h);pixels.data.set(ParameterTools.costmapPixels(w,h,data,color,maxAlpha));c.putImageData(pixels,0,0);costmapRasters.set(msg,image);}
+      const origin=poseInMap(info.origin||{},frame,msg.header?.stamp);if(!origin)return;const p=worldToCanvas(origin.x,origin.y,v),cell=v.scale*Number(info.resolution||.1)/v.res;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-origin.yaw);ctx.imageSmoothingEnabled=false;ctx.drawImage(image,0,-h*cell,w*cell,h*cell);ctx.restore();
+    }
+    function poseInMap(pose,frame,stamp) {
+      frame=frame.replace(/^\//,'');
+      const p=pose.position||pose.pose?.position||{}, q=pose.orientation||pose.pose?.orientation||{};
+      const yaw=Math.atan2(2*((q.w??1)*(q.z||0)+(q.x||0)*(q.y||0)),1-2*((q.y||0)**2+(q.z||0)**2));
+      let result={x:Number(p.x||0),y:Number(p.y||0),yaw};
+      if(frame==='odom'){const tf=stamp?scanTF.mapAt(ScanTransform.time(stamp)):state.mapOdom;if(!tf)return null;const a=tf.yaw;result={x:tf.x+Math.cos(a)*result.x-Math.sin(a)*result.y,y:tf.y+Math.sin(a)*result.x+Math.cos(a)*result.y,yaw:a+yaw};}
+      return result;
+    }
+    function drawPath(msg,v,color,width) {
+      const poses=msg.poses||[]; if(poses.length<2)return;
+      const frame=(msg.header?.frame_id||'map').replace(/^\//,'');ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+      poses.forEach((item,i)=>{const p=poseInMap(item.pose||item,frame), c=worldToCanvas(p.x,p.y,v);if(i===0)ctx.moveTo(c.x,c.y);else ctx.lineTo(c.x,c.y);});ctx.stroke();
+    }
+    function resolveScan(){
+      const pending=state.pendingScans||[];
+      for(let i=pending.length-1;i>=0;i--){
+        const pose=scanTF.laser(pending[i]);
+        if(pose){state.scan=pending[i];state.scanPose=pose;state.scanResolvedAt=Date.now();pending.splice(0,i+1);return;}
+      }
+    }
+    function drawScan(v,ratio) {
+      const scan=state.scan, r=scan.ranges||[], step=Math.max(1,Math.floor(r.length/220));
+      const pose=state.scanPose;if(!pose||Date.now()-state.scanResolvedAt>1000)return;const laser={x:0,y:0,yaw:0};
+      const lx=pose.x+Math.cos(pose.yaw)*laser.x-Math.sin(pose.yaw)*laser.y;
+      const ly=pose.y+Math.sin(pose.yaw)*laser.x+Math.cos(pose.yaw)*laser.y;
+      ctx.fillStyle='#51d6c7aa';
+      for(let i=0;i<r.length;i+=step){const dist=Number(r[i]);if(!Number.isFinite(dist)||dist>=Number(scan.range_max||Infinity)||dist<=Number(scan.range_min||0))continue;
+        const angle=pose.yaw+laser.yaw+Number(scan.angle_min||0)+i*Number(scan.angle_increment||0);
+        const p=worldToCanvas(lx+dist*Math.cos(angle),ly+dist*Math.sin(angle),v);ctx.beginPath();ctx.arc(p.x,p.y,1.7*ratio,0,Math.PI*2);ctx.fill();}
+    }
+    function drawRobot(v,ratio) {
+      const p=worldToCanvas(state.robot.x,state.robot.y,v), radius=(state.robotRadius||.3)/v.res*v.scale;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-state.robot.yaw);
+      ctx.fillStyle='#90e36a';ctx.strokeStyle='#193018';ctx.lineWidth=2*ratio;ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#172616';ctx.beginPath();ctx.moveTo(radius*.65,0);ctx.lineTo(-radius*.25,-radius*.36);ctx.lineTo(-radius*.25,radius*.36);ctx.closePath();ctx.fill();ctx.restore();
+    }
+    function drawPoseArrow(point,yaw,v,ratio,color){
+      const p=worldToCanvas(point.x,point.y,v),length=38*ratio;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-yaw);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3*ratio;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(length,0);ctx.stroke();ctx.beginPath();ctx.moveTo(length,0);ctx.lineTo(length-10*ratio,-6*ratio);ctx.lineTo(length-10*ratio,6*ratio);ctx.closePath();ctx.fill();ctx.beginPath();ctx.arc(0,0,5*ratio,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    function drawTarget(v,ratio){drawPoseArrow(state.target,state.target.yaw||0,v,ratio,'#f2b85d');}
+    function drawCanvasTarget(event) {
+      const v=canvasViewport(); if(!v)return;
+      const rect=canvas.getBoundingClientRect(), ratio=window.devicePixelRatio||1;
+      const px=(event.clientX-rect.left)*ratio, py=(event.clientY-rect.top)*ratio;
+      const world=floorWorld({x:px,y:py},v);const col=(world.x-v.originX)/v.res,row=(world.y-v.originY)/v.res;
+      if(col<0||row<0||col>=v.w||row>=v.h)return;
+      const point={x:v.originX+col*v.res,y:v.originY+row*v.res};
+      const tool=document.getElementById('mapTool').value;
+      if(tool!=='goal'){
+        let command;
+        if(tool==='add')command={action:'add',id:String(Date.now()),...point,radius:Number(document.getElementById('obstacleRadius').value)};
+        if(tool==='remove') {const nearest=Object.entries(state.obstacles||{}).sort((a,b)=>Math.hypot(a[1].x-point.x,a[1].y-point.y)-Math.hypot(b[1].x-point.x,b[1].y-point.y))[0];if(!nearest)return;command={action:'remove',id:nearest[0]};}
+        try{bridge.publish('/training/obstacle_command','std_msgs/msg/String',{data:JSON.stringify(command)});}catch(err){toast(err.message);}return;
+      }
+      if(Number(state.map.data[Math.floor(row)*v.w+Math.floor(col)])!==0){toast('请选择地图中的已知空白区域，不能选墙体或未知区域');return;}
+      state.target=point;updateReadiness();
+      const label=`目标：x ${state.target.x.toFixed(2)} · y ${state.target.y.toFixed(2)} · map`;
+      document.getElementById('cursorReadout').textContent=label;document.getElementById('goalReadout').textContent=label;draw();
+    }
+    function sendGoal() {
+      if(!navigationAllowed()){toast('导航未就绪，请先查看地图上方的运行提示');return;}
+      if(state.goalSending){return;}
+      state.runPlan=null;state.runStats={started:Date.now(),samples:0,sum:0,peak:0,elapsed_s:0,finished:false};state.trail=[];speedSamples.length=0;
+      state.goalSending=true;updateReadiness();
+      if(!state.target){state.goalSending=false;updateReadiness();toast('先点击地图选择目标点');return;}
+      try {
+        const sec=Math.floor(Date.now()/1000), nanosec=(Date.now()%1000)*1e6;
+        bridge.publish('/training/navigate_to_pose','geometry_msgs/msg/PoseStamped',{header:{stamp:{sec,nanosec},frame_id:'map'},pose:{position:{x:state.target.x,y:state.target.y,z:0},orientation:{x:0,y:0,z:Math.sin((state.target.yaw||0)/2),w:Math.cos((state.target.yaw||0)/2)}}});
+        document.getElementById('goalReadout').textContent='目标请求已发给 ROS；等待 Nav2 Action 回报。';
+        addEvent(`本机已发布导航目标请求：(${state.target.x.toFixed(2)}, ${state.target.y.toFixed(2)})，等待 Nav2 回执。`,'warn');
+      } catch(err) {state.goalSending=false;updateReadiness();toast(err.message);}
+    }
+    function publishFault(fault,enabled) {
+      try {
+        bridge.publish('/training/fault_command','std_msgs/msg/String',{data:JSON.stringify({fault,enabled})});
+        const control=document.querySelector(`[data-fault="${fault}"]`);if(control)control.checked=!!state.faults[fault];
+        addEvent(`已发送故障请求 ${fault}=${enabled}；等待仿真器状态回报。`,'warn');
+      }
+      catch(err){toast(err.message);}
+    }
+    async function refreshInflation() {
+      try {
+        const response=await bridge.callService('/global_costmap/global_costmap/get_parameters','rcl_interfaces/srv/GetParameters',{names:['inflation_layer.inflation_radius']});
+        const value=response.values?.[0];
+        if(!value)throw new Error('服务返回中没有该参数');
+        const shown=value.double_value ?? value.integer_value;
+        document.getElementById('inflationInput').value=Number(shown).toFixed(2);
+        document.getElementById('paramReadout').textContent=`节点返回实际值：${shown} m`;
+        addEvent(`读取 Nav2 参数 inflation_layer.inflation_radius=${shown}。`);
+      } catch(err){document.getElementById('paramReadout').textContent=`读取失败：${err.message}`;addEvent(`读取膨胀半径失败：${err.message}`,'error');}
+    }
+    async function setInflation() {
+      const value=Number(document.getElementById('inflationInput').value);
+      if(!Number.isFinite(value)||value<0.05||value>2){toast('膨胀半径请输入 0.05 到 2.00 m');return;}
+      try {
+        const response=await bridge.callService('/global_costmap/global_costmap/set_parameters','rcl_interfaces/srv/SetParameters',{parameters:[{name:'inflation_layer.inflation_radius',value:{type:3,double_value:value}}]});
+        const result=response.results?.[0];
+        if(!result?.successful)throw new Error(result?.reason||'Nav2 未接受参数');
+        addEvent(`Nav2 SetParameters 成功：inflation_layer.inflation_radius=${value.toFixed(2)} m。`);
+        await refreshInflation();
+        toast('Nav2 参数服务已确认应用');
+      } catch(err){document.getElementById('paramReadout').textContent=`应用失败：${err.message}`;addEvent(`设置膨胀半径失败：${err.message}`,'error');}
+    }
+    async function saveMap() {
+      const name=document.getElementById('mapName').value.trim(); if(!name){toast('请输入地图文件名');return;}
+      try {
+        const response=await bridge.callService('/slam_toolbox/save_map','slam_toolbox/srv/SaveMap',{name:{data:name}});
+        const result=response.result;
+        if(result===0 || result==='0'){addEvent(`SLAM 地图保存服务返回成功：${name}`);toast('SLAM 服务已确认保存地图');}
+        else {const reason=`SLAM 地图保存服务返回代码 ${result}`;addEvent(reason,'warn');document.getElementById('paramReadout').textContent=reason;}
+      } catch(err){addEvent(`保存地图失败：${err.message}`,'error');document.getElementById('paramReadout').textContent=`保存失败：${err.message}`;}
+    }
+    function moveCommand(motion) {
+      const msg={linear:{x:0,y:0,z:0},angular:{x:0,y:0,z:0}};
+      if(motion==='forward')msg.linear.x=.18; if(motion==='back')msg.linear.x=-.12;
+      if(motion==='left')msg.linear.y=.18; if(motion==='right')msg.linear.y=-.18;
+      if(motion==='ccw')msg.angular.z=.55; if(motion==='cw')msg.angular.z=-.55;
+      try {bridge.publish('/cmd_vel_explore','geometry_msgs/msg/Twist',msg);} catch(_){ }
+    }
+    function stopExploration() {
+      const wasManual=state.activeMotion!==null||!!state.manualTimer;
+      clearInterval(state.manualTimer);state.manualTimer=null;
+      if(wasManual){try{bridge.publish('/cmd_vel_explore','geometry_msgs/msg/Twist',{linear:{x:0,y:0,z:0},angular:{x:0,y:0,z:0}});}catch(_){}}
+      state.activeMotion=null;
+    }
+    function chooseLesson(index) {
+      renderCommandLesson(index);
+      const lesson=lessons[index]; if(!lesson)return;
+      document.querySelectorAll('.lesson-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.lesson)===index));
+      document.getElementById('lessonCount').textContent=`关卡 ${String(index+1).padStart(2,'0')} / 09`;
+      document.getElementById('missionTitle').textContent=lesson.title;
+      document.getElementById('missionCopy').textContent=lesson.copy;
+      document.getElementById('lessonObserve').textContent=lesson.observe;
+      document.getElementById('lessonReset').textContent=lesson.reset;
+      const list=document.getElementById('missionSteps');list.textContent='';
+      lesson.steps.forEach(text=>{const li=document.createElement('li');li.textContent=text;list.appendChild(li);});
+    }
+    function saveEvidence() {
+      const note=document.getElementById('evidenceInput').value.trim();
+      if(!note){toast('先填写实验现象或诊断证据');return;}
+      const selected=document.querySelector('.lesson-btn.active');
+      const index=selected?Number(selected.dataset.lesson):0;
+      const record={saved_at:new Date().toISOString(),lesson:lessons[index].title,learning_mode:document.getElementById('learningMode').value,terminal_commands:document.getElementById('terminalCommands').value,terminal_output:document.getElementById('terminalOutput').value,note,
+        ros_evidence:{scan:state.scan?{frame_id:state.scan.header?.frame_id,range_count:state.scan.ranges?.length,received_at:state.lastTopics['/scan']?new Date(state.lastTopics['/scan']).toISOString():null}:null,
+          odom:state.odom?.pose?.pose?.position?{x:state.odom.pose.pose.position.x,y:state.odom.pose.pose.position.y}:null,
+          tf_pose:state.robot?{x:Number(state.robot.x.toFixed(3)),y:Number(state.robot.y.toFixed(3)),yaw:Number(state.robot.yaw.toFixed(3))}:null,
+          nav2_cmd_vel:state.navCmd?{linear_x:state.navCmd.linear?.x,linear_y:state.navCmd.linear?.y,angular_z:state.navCmd.angular?.z}:null,
+          applied_cmd_vel:state.simCmd?{linear_x:state.simCmd.linear?.x,linear_y:state.simCmd.linear?.y,angular_z:state.simCmd.angular?.z}:null,
+          nodes:state.nodes,action:state.navigationStatus,active_faults:Object.entries(state.faults).filter(([,enabled])=>enabled).map(([name])=>name)},
+        parameter_changes:state.parameterChanges||[],comparison:{before:state.before||null,after:state.after||null}, selected_target:state.target, saved_at_local:new Date().toLocaleString('zh-CN')};
+      try {
+        const records=JSON.parse(localStorage.getItem('rm_nav_training_records')||'[]');
+        records.unshift(record);localStorage.setItem('rm_nav_training_records',JSON.stringify(records.slice(0,100)));
+        addEvent(`已将“${record.lesson}”诊断记录保存在本浏览器。`);toast('实验记录已保存在本机浏览器');
+      } catch(err) { toast(`保存失败：${err.message}`); }
+    }
+    function exportEvidence() {
+      try {
+        const records=JSON.parse(localStorage.getItem('rm_nav_training_records')||'[]');
+        if(!records.length){toast('当前浏览器还没有实验记录');return;}
+        const blob=new Blob([JSON.stringify({project:'RM 哨兵导航训练平台',exported_at:new Date().toISOString(),records},null,2)],{type:'application/json'});
+        const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='rm_nav_training_evidence.json';a.click();URL.revokeObjectURL(url);
+        toast(`已导出 ${records.length} 条诊断记录`);
+      } catch(err) { toast(`导出失败：${err.message}`); }
+    }
+    function startExploration(motion) {
+      state.activeMotion=motion;moveCommand(motion);clearInterval(state.manualTimer);
+      state.manualTimer=setInterval(()=>{if(state.activeMotion)moveCommand(state.activeMotion);},100);
+    }
+    document.getElementById('connectBtn').addEventListener('click',()=>bridge.connect(document.getElementById('wsUrl').value.trim()));
+    document.getElementById('sendGoalBtn').addEventListener('click',sendGoal);
+    document.getElementById('clearGoalBtn').addEventListener('click',()=>{state.target=null;updateReadiness();document.getElementById('cursorReadout').textContent='目标：未选择';document.getElementById('goalReadout').textContent='未设置目标';draw();});
+    document.getElementById('cancelGoalBtn').addEventListener('click',()=>{try{bridge.publish('/training/cancel_navigation','std_msgs/msg/Empty',{});addEvent('已发送 Nav2 取消请求；等待 Action 结果。','warn');}catch(err){toast(err.message);}});
+    document.querySelectorAll('[data-fault]').forEach(input=>input.addEventListener('change',()=>publishFault(input.dataset.fault,input.checked)));
+    document.getElementById('resetFaultBtn').addEventListener('click',()=>{try{bridge.publish('/training/fault_command','std_msgs/msg/String',{data:JSON.stringify({reset:true})});addEvent('已发送故障复位请求；等待仿真器确认。','warn');}catch(err){toast(err.message);}});
+    document.getElementById('setInflationBtn').addEventListener('click',setInflation);
+    document.getElementById('refreshParamBtn').addEventListener('click',refreshInflation);
+    document.getElementById('saveMapBtn').addEventListener('click',saveMap);
+    document.getElementById('saveEvidenceBtn').addEventListener('click',saveEvidence);
+    document.getElementById('exportEvidenceBtn').addEventListener('click',exportEvidence);
+    document.getElementById('manualModeBtn').addEventListener('click',()=>toast('手动探索发布 /cmd_vel_explore；SLAM 模式下用于驱动仿真机器人。'));
+    document.getElementById('diagNav').addEventListener('click',()=>document.getElementById('rosPanel').scrollIntoView({behavior:'smooth',block:'center'}));
+    document.getElementById('flowNav').addEventListener('click',()=>toast('数据链：2D 仿真器发布 /scan、/odom 与 TF；Nav2 输出 Action、路径、Costmap、/cmd_vel；ROSBridge 同源转发到浏览器。'));
+    document.querySelectorAll('.lesson-btn').forEach(b=>b.addEventListener('click',()=>chooseLesson(Number(b.dataset.lesson))));
+    document.querySelectorAll('.layers input').forEach(input=>input.addEventListener('change',draw));
+
+    window.addEventListener('resize',draw);
+    document.querySelectorAll('[data-motion]').forEach(button=>{
+      button.addEventListener('pointerdown',event=>{event.preventDefault();canvas.focus({preventScroll:true});button.setPointerCapture(event.pointerId);startExploration(button.dataset.motion);});
+      button.addEventListener('pointerup',stopExploration);button.addEventListener('pointercancel',stopExploration);button.addEventListener('lostpointercapture',stopExploration);
+    });
+    document.getElementById('keyboardFocus').onclick=()=>canvas.focus({preventScroll:true});
+    canvas.addEventListener('focus',()=>document.getElementById('keyboardState').textContent='键盘已就绪：按住 WASD 移动，QE 旋转，松开停止。');
+    canvas.addEventListener('blur',()=>document.getElementById('keyboardState').textContent='键盘未聚焦：点击地图或启用键盘控制。');
+    const heldKeys=new Set();
+    function keyboardMove(){
+      try{bridge.publish('/cmd_vel_explore','geometry_msgs/msg/Twist',KeyboardControl.command(heldKeys));}
+      catch(e){heldKeys.clear();stopExploration();toast('手动控制未发送：'+e.message);}
+    }
+    window.addEventListener('keydown',event=>{
+      if(KeyboardControl.editable(event.target)||event.ctrlKey||event.altKey||event.metaKey)return;
+      const key=KeyboardControl.key(event);if(!key)return;
+      event.preventDefault();heldKeys.add(key);keyboardMove();
+      if(!state.manualTimer)state.manualTimer=setInterval(keyboardMove,100);
+    });
+    window.addEventListener('keyup',event=>{const key=KeyboardControl.key(event);if(!key)return;heldKeys.delete(key);if(heldKeys.size)keyboardMove();else stopExploration();});
+    window.addEventListener('blur',()=>heldKeys.clear());
+    document.addEventListener('focusin',event=>{if(event.target.closest('input,textarea,select,[contenteditable]')){heldKeys.clear();stopExploration();}});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){heldKeys.clear();stopExploration();}});
+    window.addEventListener('blur',stopExploration);
+    window.setInterval(()=>{
+      updateRobot();updateReadiness();draw();
+      document.getElementById('scanMetric').innerHTML=`${state.scanCount} <span>msg/s</span>`;state.scanCount=0;
+      if(!state.scan)document.getElementById('scanMetric').innerHTML='— <span>Hz</span>';
+      if(!state.lastTopics['/scan'] || Date.now()-state.lastTopics['/scan']>1800){document.getElementById('scanStatus').textContent='无新数据';document.getElementById('scanStatus').className='pill bad';}
+      if(!state.lastTopics['/training/map'] || Date.now()-state.lastTopics['/training/map']>3500){document.getElementById('mapStatus').textContent='等待';document.getElementById('mapStatus').className='pill';}
+    },1000);
+    const navParameters=[
+      ['/controller_server','training_speed',.8,'联动平移速度上限 m/s（推荐）'],
+      ['/global_costmap/global_costmap','inflation_layer.inflation_radius',.55,'全局膨胀半径 m'],
+      ['/local_costmap/local_costmap','inflation_layer.inflation_radius',.55,'局部膨胀半径 m'],
+      ['/global_costmap/global_costmap','inflation_layer.cost_scaling_factor',3,'全局代价衰减'],
+      ['/local_costmap/local_costmap','inflation_layer.cost_scaling_factor',3,'局部代价衰减'],
+      ['/controller_server','FollowPath.BaseObstacle.scale',.02,'局部避障评分权重'],
+      ['/controller_server','FollowPath.max_vel_x',.8,'前向最大速度 m/s'],
+      ['/controller_server','FollowPath.max_vel_y',.8,'横向最大速度 m/s'],
+      ['/controller_server','FollowPath.max_speed_xy',.8,'平移合速度上限 m/s'],
+      ['/controller_server','FollowPath.max_vel_theta',1,'最大角速度 rad/s'],
+      ['/controller_server','FollowPath.acc_lim_x',2.5,'前向加速度 m/s²'],
+      ['/controller_server','FollowPath.acc_lim_y',2.5,'横向加速度 m/s²'],
+      ['/controller_server','FollowPath.PathDist.scale',32,'路径跟随权重'],
+      ['/controller_server','FollowPath.GoalDist.scale',24,'目标趋近权重'],
+      ['/controller_server','general_goal_checker.xy_goal_tolerance',.25,'到达距离容差 m'],
+      ['/planner_server','GridBased.tolerance',.5,'规划目标容差 m']
+    ];
+    navParameters.forEach((p,i)=>document.getElementById('navParam').add(new Option(p[3],i)));
+    async function readParameter(p){const r=await bridge.callService(p[0]+'/get_parameters','rcl_interfaces/srv/GetParameters',{names:[p[1]==='training_speed'?'FollowPath.max_speed_xy':p[1]]});if(r.values?.[0]?.type!==3)throw Error('未返回 double 参数 '+p[1]);return r.values[0].double_value;}
+    async function writeParameter(p,value){
+      if(!Number.isFinite(value)||value<0)throw Error('请输入非负有限数值');
+      if(p[1]==='training_speed'){
+        const names=['max_vel_x','max_vel_y','min_vel_x','min_vel_y','max_speed_xy'];
+        const theta=await readParameter(['/controller_server','FollowPath.min_speed_theta']);
+        const r=await bridge.callService(p[0]+'/set_parameters_atomically','rcl_interfaces/srv/SetParametersAtomically',{parameters:[...names.map(name=>({name:'FollowPath.'+name,value:{type:3,double_value:name.startsWith('min')?-value:value}})),{name:'FollowPath.min_speed_theta',value:{type:3,double_value:theta}}]});
+        if(!r.result?.successful)throw Error(r.result?.reason||'联动速度写入失败');
+        const verify=await bridge.callService(p[0]+'/get_parameters','rcl_interfaces/srv/GetParameters',{names:names.map(name=>'FollowPath.'+name)});
+        if(verify.values?.length!==names.length||verify.values.some((v,i)=>v.type!==3||Math.abs(v.double_value-(names[i].startsWith('min')?-value:value))>1e-6))throw Error('联动速度回读不一致');return value;
+      }
+      const parameters=[{name:p[1],value:{type:3,double_value:value}}];
+      if(p[1]==='FollowPath.max_speed_xy'){const theta=await readParameter([p[0],'FollowPath.min_speed_theta']);parameters.push({name:'FollowPath.min_speed_theta',value:{type:3,double_value:theta}});}
+      const r=await bridge.callService(p[0]+'/set_parameters','rcl_interfaces/srv/SetParameters',{parameters});
+      if(r.results?.length!==parameters.length||r.results.some(x=>!x.successful))throw Error(r.results?.find(x=>!x.successful)?.reason||'参数写入失败');
+      const actual=await readParameter(p);if(Math.abs(actual-value)>1e-6)throw Error('回读值与请求不一致：'+actual);return actual;
+    }
+    async function reloadController(){
+      const canceled=await bridge.callService('/navigate_to_pose/_action/cancel_goal','action_msgs/srv/CancelGoal',{});
+      if(canceled.return_code!==0 && canceled.goals_canceling?.length)throw Error('取消导航未被接受，未重载控制器');
+      const start=Date.now();
+      while((state.runtimeStatus?.active_goal_count||0)>0 || ['SENDING','ACCEPTED','ACTIVE','CANCEL_REQUESTED'].includes(state.navigationStatus?.state)){
+        if(Date.now()-start>5000)throw Error('等待导航取消超时，未重载控制器');
+        await new Promise(resolve=>setTimeout(resolve,100));
+      }
+      const manage=async command=>{const r=await bridge.callService('/lifecycle_manager_navigation/manage_nodes','nav2_msgs/srv/ManageLifecycleNodes',{command},20000);if(!r.success)throw Error('导航生命周期管理器转换失败 '+command);};
+      await manage(1);
+      for(const id of [2,1]){
+        const result=await bridge.callService('/controller_server/change_state','lifecycle_msgs/srv/ChangeState',{transition:{id,label:''}},12000);
+        if(!result.success)throw Error('控制器重载失败，生命周期转换 '+id+' 未成功，请重启实验');
+      }
+      await manage(2);
+      addEvent('导航已暂停、控制器重新配置并恢复；请重新发送目标比较效果。');
+    }
+
+    function reportParam(text){document.getElementById('comparison').textContent=text;addEvent(text);}
+    let parameterBusy=false;
+    const chosenParameter=()=>navParameters[document.getElementById('navParam').value];
+    function parameterStatus(text){document.getElementById('paramApplyStatus').textContent=text;}
+    function setParameterBusy(busy){parameterBusy=busy;for(const id of ['navParam','navParamValue','navParamSlider','readNavParam','applyNavParam','resetNavParams'])document.getElementById(id).disabled=busy;}
+    document.getElementById('readNavParam').onclick=async()=>{
+      if(parameterBusy)return;setParameterBusy(true);
+      try{const p=chosenParameter(),v=await readParameter(p);document.getElementById('paramActual').textContent='节点当前值：'+v;document.getElementById('navParamValue').value=v;document.getElementById('navParamSlider').value=v;parameterReference();parameterStatus('已从 ROS 节点读取实际值');}
+      catch(e){parameterStatus('读取失败：'+e.message);}finally{setParameterBusy(false);}
+    };
+    document.getElementById('applyNavParam').onclick=async()=>{
+      if(parameterBusy)return;const p=chosenParameter(),meta=ParameterTools.metadata(p);
+      try{
+        const value=ParameterTools.validate(p,document.getElementById('navParamValue').value);
+        if(meta.reload&&!document.getElementById('confirmParamReload').checked)throw Error('此参数需要取消导航并重载，请先勾选重载选项，或使用下方命令行');
+        setParameterBusy(true);parameterStatus('读取基线并提交 ROS 参数服务…');
+        const before=await readParameter(p),after=await writeParameter(p,value);
+        state.parameterChanges=state.parameterChanges||[];const change={time:new Date().toISOString(),node:p[0],name:p[1],before,requested:value,readback:after,reloaded:false};state.parameterChanges.push(change);
+        if(meta.reload){parameterStatus('参数已写入并回读；正在取消导航与重载控制器…');await reloadController();change.reloaded=true;}
+        const actual=await readParameter(p);if(Math.abs(actual-value)>1e-6)throw Error('最终读回不一致：'+actual);
+        document.getElementById('paramActual').textContent='节点当前值：'+actual;
+        const message=`${p[3]}：${before} → ${actual}。`+(meta.reload?'控制器已重载，请重发目标比较效果。':'动态服务与回读确认；请观察 Costmap / 速度验证实际效果。');
+        parameterStatus(message);addEvent(message);reportParam(message);
+        if(p[0].includes('global_costmap'))document.getElementById('showGlobalCost').checked=true;
+        if(p[0].includes('local_costmap'))document.getElementById('showLocalCost').checked=true;draw();
+      }catch(e){parameterStatus('未完成：'+e.message+'。如已写入参数，需读取实际值确认当前状态。');}finally{setParameterBusy(false);}
+    };
+    document.getElementById('resetNavParams').onclick=async()=>{
+      if(parameterBusy)return;
+      if(!document.getElementById('confirmParamReload').checked){parameterStatus('恢复全部教学参数需要重载控制器，请先勾选重载选项。');return;}
+      setParameterBusy(true);const results=[];
+      try{for(const p of navParameters){try{results.push(p[3]+': '+await writeParameter(p,p[2]));}catch(e){results.push(p[3]+': 失败 '+e.message);}}await reloadController();results.push('重载完成，请重发目标');parameterStatus('恢复流程结束，请检查逐项结果');}
+      catch(e){results.push(e.message);parameterStatus('恢复未完成，请检查逐项结果和节点状态');}
+      finally{reportParam(results.join('\n'));setParameterBusy(false);}
+    };
+    async function cancelForExperiment(){
+      stopExploration();heldKeys.clear();
+      const r=await bridge.callService('/navigate_to_pose/_action/cancel_goal','action_msgs/srv/CancelGoal',{});
+      if(r.return_code!==0&&r.goals_canceling?.length)throw Error('无法取消任务');
+      const start=Date.now();while((state.runtimeStatus?.active_goal_count||0)>0||state.goalSending){if(Date.now()-start>7000)throw Error('请等待导航结束再操作');await new Promise(r=>setTimeout(r,100));}
+    }
+    async function experimentOperation(repeat){
+      const status=document.getElementById('experimentStatus');if(parameterBusy){status.textContent='请等待参数应用或控制器重载完成';return;}const buttons=['saveExperimentStart','repeatExperiment'].map(id=>document.getElementById(id));buttons.forEach(b=>b.disabled=true);
+      try{
+        if(Object.values(state.faults||{}).some(Boolean))throw Error('对比实验请先关闭人为故障');
+        if(state.runtimeStatus?.mode!=='navigation')throw Error('固定起点对比仅支持已知地图导航，请勿在 SLAM 中重置');
+        if(!repeat&&!state.target)throw Error('请先在地图选好目标，再保存对比起点');
+        if(repeat&&!state.experimentStart)throw Error('请先保存对比起点与布局');
+        status.textContent='正在取消任务并准备相同场景…';await cancelForExperiment();
+        if(!repeat){const r=await bridge.callService('/training/capture_start','std_srvs/srv/Trigger',{});if(!r.success)throw Error(r.message);state.experimentStart={...JSON.parse(r.message),target:structuredClone(state.target)};status.textContent=`已保存起点 (${state.experimentStart.x.toFixed(2)}, ${state.experimentStart.y.toFixed(2)})、朝向、目标与障碍；可点击恢复并运行。重启实验后需重新保存。`;}
+        else{
+          const saved=state.experimentStart,r=await bridge.callService('/training/restore_start','std_srvs/srv/Trigger',{});if(!r.success)throw Error(r.message);
+          state.robot=null;state.mapOdom=null;state.odomBase=null;state.baseLaser=null;state.trail=[];state.globalPath=null;state.localPath=null;state.scan=null;state.pendingScans=[];scanTF=new ScanTransform.Buffer();
+          for(const scope of ['global','local']){const clear=await bridge.callService('/'+scope+'_costmap/clear_entirely_'+scope+'_costmap','nav2_msgs/srv/ClearEntireCostmap',{});}
+          const start=Date.now();while(!state.robot||Math.hypot(state.robot.x-saved.x,state.robot.y-saved.y)>.12||Math.abs(Math.atan2(Math.sin(state.robot.yaw-saved.yaw),Math.cos(state.robot.yaw-saved.yaw)))>.12||!navigationAllowed()){if(Date.now()-start>8000)throw Error('定位未恢复到对比起点，请检查 TF 和初始位姿');await new Promise(r=>setTimeout(r,100));}
+          setTarget(saved.target,saved.target.yaw);sendGoal();status.textContent='已恢复相同起点、朝向、目标与障碍布局，当前参数保持不变。导航完成后记录结果。';
+        }
+      }catch(e){status.textContent='未完成：'+e.message;}finally{buttons.forEach(b=>b.disabled=false);}
+    }
+    document.getElementById('saveExperimentStart').onclick=()=>experimentOperation(false);
+    document.getElementById('repeatExperiment').onclick=()=>experimentOperation(true);
+    function comparisonSummary(s){return !s?'尚未记录':`路径 ${s.length_m??'—'} m；实测峰值 ${s.speed?.peak_m_s?.toFixed(2)??'—'} m/s；均速 ${s.speed?.mean_m_s?.toFixed(2)??'—'} m/s；耗时 ${s.speed?.elapsed_s?.toFixed(1)??'—'} s；${s.nav?.state||'无状态'}`;}
+    document.getElementById('exportExperiment').onclick=()=>{const blob=new Blob([JSON.stringify({saved_at:new Date().toISOString(),before:state.before||null,after:state.after||null,changes:state.parameterChanges||[]},null,2)],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='navigation_comparison.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
+    async function captureParameters(){const values=await Promise.allSettled(navParameters.map(p=>readParameter(p)));return Object.fromEntries(navParameters.map((p,i)=>[p[0]+':'+p[1],values[i].status==='fulfilled'?values[i].value:'读取失败']));}
+    function snapshot(){const ps=(state.runPlan||state.globalPath)?.poses||[];let length=0;for(let i=1;i<ps.length;i++)length+=Math.hypot(ps[i].pose.position.x-ps[i-1].pose.position.x,ps[i].pose.position.y-ps[i-1].pose.position.y);return {time:new Date().toISOString(),target:state.target,length_m:ps.length?+length.toFixed(3):null,nav:state.navigationStatus,velocity:state.simCmd,start:state.experimentStart||null,obstacles:structuredClone(state.obstacles||{}),actual_trail:structuredClone(state.trail),speed:state.runStats?{peak_m_s:state.runStats.peak,mean_m_s:state.runStats.sum/Math.max(1,state.runStats.samples),elapsed_s:state.runStats.elapsed_s,finished:state.runStats.finished}:null};}
+    document.getElementById('captureBefore').onclick=async()=>{const image=document.getElementById('beforeImage');image.src=canvas.toDataURL();image.hidden=false;state.before=snapshot();state.before.parameters=await captureParameters();state.beforePath=(state.runPlan||state.globalPath)?structuredClone(state.runPlan||state.globalPath):null;state.beforeTrail=structuredClone(state.trail);reportParam('调整前已记录：'+comparisonSummary(state.before));draw();};
+    document.getElementById('compareAfter').onclick=async()=>{const image=document.getElementById('afterImage');image.src=canvas.toDataURL();image.hidden=false;state.after=snapshot();state.after.parameters=await captureParameters();reportParam('调整前：'+comparisonSummary(state.before)+'\n调整后：'+comparisonSummary(state.after)+'\n粉色虚线为调整前实际轨迹。完整数据可导出 JSON。');};
+    document.getElementById('clearObstacles').onclick=()=>{try{bridge.publish('/training/obstacle_command','std_msgs/msg/String',{data:JSON.stringify({action:'clear'})});}catch(e){toast(e.message);}};
+    let runtimeHydrated=false, runtimeBusy=false;
+    async function runtime(action){
+      if(runtimeBusy)return;
+      const controls=[...document.querySelectorAll('[data-experience],#runStart,#runStop')];
+      if(action){runtimeBusy=true;controls.forEach(b=>b.disabled=true);document.getElementById('runStatus').textContent='正在停止旧实验并切换，请稍候…';}
+      try{
+        if(action){stopExploration();heldKeys.clear();state.map=null;state.robot=null;state.mapOdom=null;state.odomBase=null;state.globalPath=null;state.localPath=null;state.globalCost=null;state.localCost=null;state.beforePath=null;state.obstacles={};state.target=null;state.trail=[];state.view={zoom:1,panX:0,panY:0,follow:false};draw();}
+        const response=await fetch('/api/'+(action||'runtime'),action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:document.getElementById('runMode').value,map:document.getElementById('worldMap').value,radius:Number(document.getElementById('bodyRadius').value)})}:{});
+        if(!response.ok) {let message='需要使用 training_server 启动网页管理器';try{message=(await response.json()).error||message;}catch(_){}throw Error(message);}
+        const data=await response.json();if(!document.getElementById('worldMap').value&&data.default_map)document.getElementById('worldMap').value=data.default_map;if(!runtimeHydrated&&data.mode){document.getElementById('runMode').value=data.mode;runtimeHydrated=true;}document.getElementById('runStatus').textContent=data.running?'进程运行中 · '+data.mode+' · ROS 就绪状态请检查下方节点与话题':'管理器未运行实验；终端启动请检查 ROS 节点与话题'+(data.exit_code!==null?' · 退出码 '+data.exit_code:'');
+        const list=document.getElementById('availableMaps');list.replaceChildren();for(const map of data.maps||[])list.append(new Option(map,map));
+      }catch(e){document.getElementById('runStatus').textContent=e.message;}
+      finally{if(action){runtimeBusy=false;controls.forEach(b=>b.disabled=false);}}
+    }
+    function experienceGuide(){
+      const mode=document.getElementById('runMode').value;
+      document.getElementById('experienceGuide').textContent={localization:'定位：启动后用 W/A/S/D 平移、Q/E 旋转。观察激光与已知墙体是否重合；有定位偏差时，用初始位姿工具拖出位置与朝向。此模式不启动导航控制器。',slam:'建图：启动后用 W/A/S/D、Q/E 探索，地图随激光逐步生成。可添加障碍。完成后按 README 在终端保存地图，再到导航体验加载地图 YAML。',navigation:'导航：启动后在空白区域拖出目标箭头，再点击开始导航。可添加或移动障碍，观察真实路径和代价地图变化。'}[mode]||'仅仿真：使用键盘体验全向底盘。';
+    }
+    document.querySelectorAll('[data-experience]').forEach(button=>button.onclick=()=>{document.getElementById('runMode').value=button.dataset.experience;document.getElementById('mapTool').value=button.dataset.experience==='localization'?'pose':button.dataset.experience==='slam'?'pan':'goal';toolHelp();experienceGuide();runtime('start');});
+    document.getElementById('runMode').onchange=experienceGuide;experienceGuide();
+    document.getElementById('runStart').onclick=()=>runtime('start');document.getElementById('runStop').onclick=()=>runtime('stop');runtime();setInterval(()=>runtime(),5000);
+    function renderCommandLesson(index){
+      const lesson=commandLessons[index];
+      document.getElementById('commandStage').textContent=index<3?'入门 · 完整示例':index<6?'进阶 · 先看提示':'综合 · 独立完成';
+      document.getElementById('commandTask').textContent=lesson.task;
+      document.getElementById('commandHint').textContent=lesson.hint;
+      document.getElementById('lessonCommands').textContent=lesson.commands;
+      document.getElementById('lessonCommands').hidden=index>=3;
+      document.getElementById('revealCommands').hidden=index<3;
+      document.getElementById('commandEvidence').textContent='提交证据：'+lesson.evidence;
+    }
+    document.getElementById('revealCommands').onclick=()=>{document.getElementById('lessonCommands').hidden=false;};
+    document.getElementById('learningMode').onchange=()=>{document.body.dataset.learning=document.getElementById('learningMode').value;};
+    function parameterReference(){
+      const p=chosenParameter(),meta=ParameterTools.metadata(p);
+      document.getElementById('paramMode').textContent=(meta.reload?'需重载控制器':'支持动态修改')+' · ROS 域 '+(state.runtimeStatus?.ros_domain_id??'待连接，默认 0')+' · '+p[0]+' · '+(p[1]==='training_speed'?'DWB 五项速度联动':p[1]);
+      document.getElementById('paramEffect').textContent=meta.effect;
+      document.getElementById('paramObserve').textContent='观察方法：'+meta.observe+' 运行时修改不会自动保存到 YAML。';
+      const slider=document.getElementById('navParamSlider');slider.min=meta.min;slider.max=meta.max;slider.step=meta.step;slider.value=document.getElementById('navParamValue').value;
+      const input=document.getElementById('navParamValue');input.min=meta.min;input.max=meta.max;input.step=meta.step;
+      document.getElementById('applyNavParam').textContent=meta.reload?'应用并重载':'动态应用';
+      try{document.getElementById('parameterCommands').textContent=ParameterTools.commands(p,input.value,state.runtimeStatus?.ros_domain_id??0);}catch(e){document.getElementById('parameterCommands').textContent=e.message;}
+    }
+    document.getElementById('navParam').addEventListener('change',()=>{const p=chosenParameter();document.getElementById('navParamValue').value=p[2];document.getElementById('paramActual').textContent='节点当前值：尚未读取（输入框为配置参考值）';parameterStatus('请先读取节点当前值，再修改');parameterReference();});
+    document.getElementById('navParamValue').addEventListener('input',parameterReference);
+    document.getElementById('navParamSlider').addEventListener('input',event=>{document.getElementById('navParamValue').value=event.target.value;parameterReference();});
+    document.getElementById('copyParameterCommands').onclick=async()=>{try{await navigator.clipboard.writeText(document.getElementById('parameterCommands').textContent);toast('命令已复制，请在实验终端逐条执行');}catch(_){toast('复制不可用，请选择下方命令文本手动复制');}};
+    document.getElementById('navParamValue').value=navParameters[0][2];parameterReference();
+    function navigationAllowed(){return state.runtimeStatus?.navigation_ready===true && Date.now()-(state.lastTopics['/training/runtime_status']||0)<3500;}
+    function updateReadiness(){
+      const box=document.getElementById('readiness');if(!box)return;
+      const ready=navigationAllowed(), info=state.runtimeStatus;
+      const modeNames={localization:'定位体验 · AMCL',sim:'仅仿真 · 手动移动',slam:'SLAM 建图与导航',navigation:'已知地图导航'};
+      const fresh=Date.now()-(state.lastTopics['/training/runtime_status']||0)<3500;
+      document.getElementById('actualMode').textContent=fresh?(modeNames[info?.mode]||'等待模式信息'):'等待实验连接';
+      document.getElementById('readyDetail').textContent=fresh?(info?.detail||'正在检查导航状态'):'选择定位、建图或导航体验并启动；也可以使用终端 Launch。';
+      box.classList.toggle('ready',ready);
+      const button=document.getElementById('sendGoalBtn');
+      button.disabled=!ready||!state.target||!!state.goalSending;
+      button.textContent=state.goalSending?'正在导航…':!ready?'导航未就绪':!state.target?'先在地图选择目标':'开始导航';
+    }
+    function simplifyLayout(){
+      const workspace=document.querySelector('.workspace'),right=document.querySelector('.right');
+      const runtimePanel=document.getElementById('learningMode').closest('section');
+      const commandPanel=document.getElementById('lessonCommands').closest('section');
+      const mission=document.getElementById('missionTitle').closest('section');
+      const manual=document.querySelector('[data-motion]').closest('section');
+      const parameters=document.getElementById('navParam').closest('section');
+      const faults=document.querySelector('[data-fault]').closest('section');
+      const events=document.getElementById('events').closest('section');
+      const readiness=document.createElement('div');readiness.id='readiness';readiness.className='readiness';
+      readiness.innerHTML='<strong id="actualMode">等待实验连接</strong><span id="readyDetail">正在检查导航状态…</span><details class="startup-help"><summary>如何启动导航 / SLAM？</summary><p>先在旧实验终端按 Ctrl+C。下面两条 Launch 每次只运行一条；每个终端先 source 环境并保持 ROS_DOMAIN_ID 一致（未设置时为 0）。</p><pre>ros2 launch rm_nav_training_lab known_map.launch.py serve_web:=false rviz:=false\n\n# 建图时使用\nros2 launch rm_nav_training_lab slam_nav2.launch.py serve_web:=false rviz:=false</pre></details>';
+      workspace.insertBefore(readiness,workspace.children[1]);
+      const nav=document.createElement('div');nav.className='tool-tabs';nav.setAttribute('role','tablist');right.prepend(nav);
+      const panes={};
+      for(const [key,label] of [['operate','操作'],['params','调参'],['course','课程'],['diagnostics','诊断']]){
+        const button=document.createElement('button');button.className='btn';button.textContent=label;button.setAttribute('role','tab');button.setAttribute('aria-selected',String(key==='operate'));nav.append(button);
+        const pane=document.createElement('div');pane.className='tool-pane';pane.hidden=key!=='operate';right.append(pane);panes[key]=pane;
+        button.onclick=()=>{for(const [name,p] of Object.entries(panes))p.hidden=name!==key;for(const b of nav.children)b.setAttribute('aria-selected',String(b===button));draw();};
+      }
+      panes.operate.append(runtimePanel,manual);
+      const help=document.createElement('section');help.className='panel right-panel';help.innerHTML='<div class="panel-title">导航操作提示</div><div class="mode-guide">① 确认“导航已就绪”<br>② 在地图拖出目标朝向箭头<br>③ 点击“开始导航”或勾选松手导航<br><br>手动探索：W/S 前后，A/D 横移，Q/E 旋转。导航时先取消任务，再手动移动。</div>';
+      const cancel=document.getElementById('cancelGoalBtn');help.append(cancel);panes.operate.append(help);
+      panes.params.append(parameters);
+      panes.course.append(document.querySelector('.lesson-panel'),commandPanel,mission);
+      panes.diagnostics.append(document.getElementById('rosPanel'),faults,events);
+      const note=document.getElementById('teachingNote');const details=document.createElement('details');details.innerHTML='<summary>使用方式说明</summary>';note.before(details);details.append(note);
+      const mapInfo=runtimePanel.querySelector(':scope > .service-note:last-child');if(mapInfo){const d=document.createElement('details');d.innerHTML='<summary>地图与模式说明</summary>';mapInfo.before(d);d.append(mapInfo);}
+      document.getElementById('runStatus').classList.add('experience-only');
+      document.querySelector('.subtitle').textContent='真实 ROS 数据 · 运行模式与导航状态显示在下方';
+      updateReadiness();
+    }
+    function canvasPoint(event){const r=canvas.getBoundingClientRect();return {x:(event.clientX-r.left)*canvas.width/r.width,y:(event.clientY-r.top)*canvas.height/r.height};}
+    function insideFree(point){const m=state.map?.info;if(!m)return false;const col=Math.floor((point.x-m.origin.position.x)/m.resolution),row=Math.floor((point.y-m.origin.position.y)/m.resolution);return col>=0&&row>=0&&col<m.width&&row<m.height&&Number(state.map.data[row*m.width+col])===0;}
+    function setTarget(point,yaw){state.target={...point,yaw};const text=`目标 x ${point.x.toFixed(2)} · y ${point.y.toFixed(2)} · 朝向 ${(yaw*180/Math.PI).toFixed(0)}°`;document.getElementById('cursorReadout').textContent=text;document.getElementById('goalReadout').textContent=text;updateReadiness();draw();}
+    canvas.addEventListener('contextmenu',event=>event.preventDefault());
+    canvas.addEventListener('wheel',event=>{event.preventDefault();if(!state.map)return;if(sceneMode){const screen=canvasPoint(event),anchor=floorWorld(screen,canvasViewport());state.view.zoom=Math.max(.6,Math.min(12,state.view.zoom*Math.exp(-event.deltaY*.0015)));const next=screenWorld(anchor,canvasViewport());state.view.panX+=screen.x-next.x;state.view.panY+=screen.y-next.y;}else state.view=MapInteraction.zoomAt(state.view,canvasPoint(event),Math.exp(-event.deltaY*.0015),canvas.width,canvas.height,state.map.info);state.view.follow=false;document.getElementById('followRobot').setAttribute('aria-pressed','false');draw();},{passive:false});
+    canvas.addEventListener('pointerdown',event=>{
+      if(event.button>2)return;canvas.focus({preventScroll:true});if(!state.map)return;event.preventDefault();const screen=canvasPoint(event),v=canvasViewport(),point=floorWorld(screen,v),tool=document.getElementById('mapTool').value;
+      const pan=event.button===1||event.button===2||event.shiftKey||tool==='pan';
+      if(pan){state.view.follow=false;state.gesture={kind:sceneMode&&event.button===2&&!event.shiftKey?'orbit':'pan',screen,panX:state.view.panX,panY:state.view.panY,yaw:sceneCamera.yaw,tilt:sceneCamera.tilt};}
+      else if(tool==='goal'||tool==='pose'){
+        if(!insideFree(point)){toast('请选择已知空白区域');return;}
+        if(tool==='pose'&&state.runtimeStatus?.mode!=='navigation'&&state.runtimeStatus?.mode!=='localization'){toast('初始位姿只用于已知地图定位，不能用来移动 SLAM 中的机器人');return;}
+        if(tool==='goal'&&state.goalSending){toast('请先取消当前导航，再编辑新目标');return;}
+        state.gesture={kind:tool,start:point,screen,previousTarget:state.target?{...state.target}:null,yaw:tool==='goal'?(state.target?.yaw||0):(state.robot?.yaw||0)};
+        if(tool==='goal')setTarget(point,state.gesture.yaw);
+      }else if(tool==='move'){
+        const item=Object.entries(state.obstacles||{}).filter(([,o])=>Math.hypot(o.x-point.x,o.y-point.y)<=o.radius+.1).sort((a,b)=>Math.hypot(a[1].x-point.x,a[1].y-point.y)-Math.hypot(b[1].x-point.x,b[1].y-point.y))[0];
+        if(!item){toast('请拖动橙色的自定义障碍物');return;}state.gesture={kind:'move',id:item[0],obstacle:{...item[1]},preview:point};
+      }else{drawCanvasTarget(event);return;}
+      canvas.setPointerCapture(event.pointerId);draw();
+    });
+    canvas.addEventListener('pointermove',event=>{
+      const v=canvasViewport();if(!v)return;const screen=canvasPoint(event),point=floorWorld(screen,v),g=state.gesture;
+      if(!g){document.getElementById('cursorReadout').textContent=`光标 x ${point.x.toFixed(2)} · y ${point.y.toFixed(2)} m`;return;}
+      if(g.kind==='orbit'){sceneCamera.yaw=g.yaw+(screen.x-g.screen.x)*.006;sceneCamera.tilt=Math.max(.3,Math.min(1.5,g.tilt+(screen.y-g.screen.y)*.004));}
+      else if(g.kind==='pan'){state.view.panX=g.panX+screen.x-g.screen.x;state.view.panY=g.panY+screen.y-g.screen.y;}
+      else if(g.kind==='move')g.preview=point;
+      else{g.yaw=MapInteraction.heading(g.start,point,g.yaw);if(g.kind==='goal')setTarget(g.start,g.yaw);}draw();
+    });
+    canvas.addEventListener('pointerup',event=>{
+      const g=state.gesture;if(!g)return;state.gesture=null;
+      try{
+        if(g.kind==='move'&&g.preview)bridge.publish('/training/obstacle_command','std_msgs/msg/String',{data:JSON.stringify({action:'add',id:g.id,...g.preview,radius:g.obstacle.radius})});
+        if(g.kind==='pose'){
+          const covariance=Array(36).fill(0);covariance[0]=covariance[7]=.25;covariance[35]=.0685;
+          bridge.publish('/initialpose','geometry_msgs/msg/PoseWithCovarianceStamped',{header:{frame_id:'map'},pose:{pose:{position:{x:g.start.x,y:g.start.y,z:0},orientation:{x:0,y:0,z:Math.sin(g.yaw/2),w:Math.cos(g.yaw/2)}},covariance}});toast('已向 AMCL 发布初始位姿，等待定位数据更新；不会瞬移仿真机器人');
+        }
+        if(g.kind==='goal'&&document.getElementById('quickGoal').checked)sendGoal();
+      }catch(e){toast(e.message);}if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);draw();
+    });
+    canvas.addEventListener('pointercancel',()=>{if(state.gesture?.kind==='goal')state.target=state.gesture.previousTarget;state.gesture=null;updateReadiness();draw();});
+    window.addEventListener('keydown',event=>{if(event.key==='Escape'){if(state.gesture?.kind==='goal')state.target=state.gesture.previousTarget;state.gesture=null;updateReadiness();draw();}});
+    function toolHelp(){const tool=document.getElementById('mapTool').value;document.getElementById('obstacleRadius').hidden=!['add','move'].includes(tool);document.querySelector('label[for=obstacleRadius]').hidden=!['add','move'].includes(tool);document.getElementById('interactionHelp').textContent={goal:'按下确定目标位置，拖动箭头指定朝向；松手后点击开始导航，或启用松手直接导航。',pan:'按住拖动平移；滚轮以光标为中心缩放；适应地图恢复视角。',pose:'已知地图模式：拖出位置与朝向，发布 AMCL 初始位姿，不移动仿真机器人。',move:'拖动橙色自定义障碍，松手后由仿真器确认；不能直接移动静态赛场墙体。',add:'点击放置圆形障碍，真实影响激光与碰撞；半径单位为米。',remove:'点击删除距离最近的自定义障碍。'}[tool];}document.getElementById('mapTool').addEventListener('change',toolHelp);toolHelp();
+    document.getElementById('sceneToggle').onclick=()=>{sceneMode=!sceneMode;state.gesture=null;state.view={zoom:1,panX:0,panY:0,follow:false};document.getElementById('sceneToggle').textContent=sceneMode?'切换二维':'切换三维';draw();};
+    document.getElementById('fitMap').onclick=()=>{state.view={zoom:1,panX:0,panY:0,follow:false};document.getElementById('followRobot').setAttribute('aria-pressed','false');draw();};
+    document.getElementById('followRobot').onclick=()=>{state.view.follow=!state.view.follow;document.getElementById('followRobot').setAttribute('aria-pressed',String(state.view.follow));draw();};
+    document.getElementById('fullMap').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.getElementById('canvasWrap').requestFullscreen();draw();}catch(e){toast('全屏不可用：'+e.message);}};
+    const speedPanel=document.createElement('div');speedPanel.style.cssText='position:absolute;right:12px;top:48px;max-width:290px;padding:10px;background:#10191ee8;border:1px solid #50646e;border-radius:8px;pointer-events:none;z-index:2';speedPanel.innerHTML='<strong id="liveSpeed" style="font-size:26px;color:#a2e96d">等待速度</strong><div id="liveSpeedDetail" style="font-size:11px;color:#c9d8dc">实测 /odom，含横移合速度</div><canvas id="speedGraph" width="260" height="54" style="width:100%;height:54px"></canvas><div style="font-size:10px;color:#c9d8dc">最近20秒：绿＝实测速度，蓝＝导航指令</div>';document.getElementById('canvasWrap').append(speedPanel);
+    setInterval(()=>{if(Date.now()-(state.lastTopics['/odom']||0)>1500)document.getElementById('liveSpeed').textContent='速度数据中断';},1000);
+    const sceneControls=document.createElement('div');sceneControls.style.cssText='position:absolute;bottom:12px;left:12px;display:flex;gap:8px;z-index:3';
+    for(const [label,id] of [['二维 / 三维','sceneToggle'],['发送目标','sendGoalBtn'],['取消导航','cancelGoalBtn'],['退出全屏','fullMap']]){const b=document.createElement('button');b.className='btn small';b.textContent=label;b.onclick=()=>document.getElementById(id).click();sceneControls.append(b);}
+    document.getElementById('canvasWrap').append(sceneControls);
+    document.addEventListener('fullscreenchange',draw);
+    simplifyLayout();
+    chooseLesson(0);
+    bridge.connect(document.getElementById('wsUrl').value);
+  </script>
+</body>
+</html>

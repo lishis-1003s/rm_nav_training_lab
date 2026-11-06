@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),k=require('../src/rm_nav_training_lab/web/keyboard_control.js');
+test('physical WASD works with Chinese input method and upper case',()=>{assert.equal(k.key({code:'KeyW',key:'Process'}),'w');assert.equal(k.key({code:'KeyA',key:'A'}),'a');assert.equal(k.key({code:'Space',key:' '}),null);});
+test('editable targets are protected and non-element targets do not throw',()=>{assert.equal(k.editable({closest:()=>({})}),true);assert.equal(k.editable({closest:()=>null}),false);assert.equal(k.editable({}),false);});
+test('holonomic combinations and opposite keys',()=>{const c=k.command(new Set(['w','a','q']));assert.equal(c.linear.x,.18);assert.equal(c.linear.y,.18);assert.equal(c.angular.z,.55);assert.equal(k.command(new Set(['w','s'])).linear.x,0);assert.equal(k.command(new Set()).angular.z,0);});

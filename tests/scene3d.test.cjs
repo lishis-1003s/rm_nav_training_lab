@@ -1,0 +1,4 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),scene=require('../src/rm_nav_training_lab/web/scene3d.js');
+const map={width:252,height:172,resolution:.05,origin:{position:{x:-6.3,y:-4.3}}};
+test('3D floor picking round trips at different camera angles, zoom and pan',()=>{for(const yaw of [-2,-.35,0,1.8])for(const tilt of [.3,.85,1.5]){const v=scene.viewport(1200,700,map,{zoom:2,panX:53,panY:-28},{yaw,tilt});for(const p of [{x:-5,y:-3},{x:0,y:0},{x:4,y:2}]){const q=scene.unproject(scene.project(p,v),v);assert.ok(Math.hypot(q.x-p.x,q.y-p.y)<1e-10);}}});
+test('height only changes elevation on screen, not floor xy convention',()=>{const v=scene.viewport(1200,700,map,{zoom:1,panX:0,panY:0},{yaw:0,tilt:.85});const a=scene.project({x:1,y:1},v),b=scene.project({x:1,y:1,z:.5},v);assert.equal(a.x,b.x);assert.ok(b.y<a.y);});

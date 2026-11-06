@@ -1,0 +1,4 @@
+# Persistent default for the browser experience supervisor.
+map: beginner_arena.yaml
+mode: navigation
+robot_radius: 0.30
